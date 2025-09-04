@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -73,7 +73,7 @@ namespace Stride.Assets.Skyboxes
                     var textureAssetItem = new AssetItem(textureUrl, textureAsset);
 
                     // Create and add the texture command.
-                    var textureParameters = new TextureConvertParameters(assetSource, textureAsset, PlatformType.Windows, GraphicsPlatform.Direct3D11, graphicsProfile, gameSettingsAsset.GetOrCreate<TextureSettings>().TextureQuality, colorSpace);
+                    var textureParameters = new TextureConvertParameters(assetSource, textureAsset, context.Platform, context.Platform.GetDefaultGraphicsPlatform(), graphicsProfile, gameSettingsAsset.GetOrCreate<TextureSettings>().TextureQuality, colorSpace);
                     var prereqStep = new AssetBuildStep(textureAssetItem);
                     prereqStep.Add(new TextureAssetCompiler.TextureConvertCommand(textureUrl, textureParameters, assetItem.Package));
                     result.BuildSteps.Add(prereqStep);

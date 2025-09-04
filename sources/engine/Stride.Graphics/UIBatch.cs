@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -441,7 +441,7 @@ namespace Stride.Graphics
             worldMatrix.M43 -= worldMatrix.M13 * leftTopCornerOffset.X + worldMatrix.M23 * leftTopCornerOffset.Y;
 
             // transform the world matrix into the world view project matrix
-            Matrix.MultiplyTo(ref worldMatrix, ref viewProjectionMatrix, out drawCommand.Matrix);
+            Matrix.Multiply(ref worldMatrix, ref viewProjectionMatrix, out drawCommand.Matrix);
 
             if (font.FontType == SpriteFontType.SDF)
             {
@@ -510,11 +510,22 @@ namespace Stride.Graphics
             }
         }
 
+        /// <summary>
+        /// Returns +x when this rect is facing towards the camera, -x otherwise
+        /// </summary>
+        private static unsafe float FacingDirection(UIImageDrawInfo* drawInfo)
+        {
+            // Effectively -Vector3.Cross(drawInfo->UnitXWorld.XYZ(), drawInfo->UnitYWorld.XYZ()).Z
+            var left = drawInfo->UnitXWorld;
+            var right = drawInfo->UnitYWorld;
+            return (left.Y * right.X) - (left.X * right.Y);
+        }
+
         private static unsafe void CalculateCubeVertices(UIImageDrawInfo* drawInfo, VertexPositionColorTextureSwizzle* vertex)
         {
             const int VertexCountPerAxis = 2;
 
-            var depthBiasMultiplier = drawInfo->DepthBias * DepthBiasShiftOneUnit;
+            var depthBiasMultiplier = MathF.CopySign(drawInfo->DepthBias * DepthBiasShiftOneUnit, FacingDirection(drawInfo));
             var colorScale = drawInfo->ColorScale.ToColor4();
             var colorAdd = drawInfo->ColorAdd.ToColor4();
             var swizzle = (float)drawInfo->Swizzle;
@@ -604,7 +615,7 @@ namespace Stride.Graphics
 
             const int VertexCountPerAxis = 4;
 
-            var depthBiasMultiplier = drawInfo->DepthBias * DepthBiasShiftOneUnit;
+            var depthBiasMultiplier = MathF.CopySign(drawInfo->DepthBias * DepthBiasShiftOneUnit, FacingDirection(drawInfo));
             var colorScale = drawInfo->ColorScale.ToColor4();
             var colorAdd = drawInfo->ColorAdd.ToColor4();
             var swizzle = (float)drawInfo->Swizzle;
@@ -679,7 +690,7 @@ namespace Stride.Graphics
                 }
             }
 
-            var depthBiasMultiplier = drawInfo->DepthBias * DepthBiasShiftOneUnit;
+            var depthBiasMultiplier = MathF.CopySign(drawInfo->DepthBias * DepthBiasShiftOneUnit, FacingDirection(drawInfo));
             var colorScale = drawInfo->ColorScale.ToColor4();
             var colorAdd = drawInfo->ColorAdd.ToColor4();
             var swizzle = (float)drawInfo->Swizzle;

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -27,7 +27,7 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.Services
         /// </summary>
         /// <remarks>This won't reset light probe coefficients.</remarks>
         /// <returns></returns>
-        Task<Dictionary<Guid, FastList<Color3>>> RequestLightProbesStep();
+        Task<Dictionary<Guid, List<Color3>>> RequestLightProbesStep();
 
         /// <summary>
         /// Transfers light probes coefficients by calling <see cref="LightProbeProcessor.UpdateLightProbeCoefficients"/> (from <see cref="LightProbeComponent.Coefficients"/> to <see cref="LightProbeRuntimeData.Coefficients"/>).

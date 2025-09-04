@@ -1,10 +1,9 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Threading.Tasks;
 using Stride.Core.Assets.Quantum;
 using Stride.Core.Assets.Yaml;
-using Stride.Core;
 using Stride.Core.Annotations;
 using Stride.Core.Reflection;
 using Stride.Core.Quantum;

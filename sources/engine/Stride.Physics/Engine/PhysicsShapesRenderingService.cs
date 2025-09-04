@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -167,10 +167,7 @@ namespace Stride.Physics.Engine
                                 debugPrimitive = shape.CreateUpdatableDebugPrimitive(graphicsDevice);
                                 updatableDebugMeshCache[shape] = debugPrimitive;
                             }
-                            if (!updatableDebugMeshes.ContainsKey(shape))
-                            {
-                                updatableDebugMeshes.Add(shape, debugPrimitive);
-                            }
+                            updatableDebugMeshes.TryAdd(shape, debugPrimitive);
                         }
                         else if (type == typeof(CapsuleColliderShape) || type == typeof(ConvexHullColliderShape) || type == typeof(StaticMeshColliderShape))
                         {

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -52,13 +52,13 @@ namespace Stride.GameStudio.View
         private async void License_OnClick(object sender, RoutedEventArgs e)
         {
             var message = await LoadMarkdown("LICENSE.md");
-            Service.MessageBox(message).Forget();
+            Service.MessageBoxAsync(message).Forget();
         }
 
         private async void ThirdParty_OnClick(object sender, RoutedEventArgs e)
         {
             var message = await LoadMarkdown("THIRD PARTY.md");
-            Service.MessageBox(message).Forget();
+            Service.MessageBoxAsync(message).Forget();
         }
         
         private async static Task<string> LoadMarkdown(string file)

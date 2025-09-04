@@ -1,19 +1,18 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.IO;
 using System.Threading.Tasks;
 using Stride.Core.IO;
-using Stride.Assets.Presentation.Preview.Views;
 using Stride.Core.Presentation.Services;
 using Stride.Assets.Media;
 using Stride.Audio;
-using Stride.Editor.Preview;
+using Stride.Editor.Annotations;
 using Stride.Media;
 
 namespace Stride.Assets.Presentation.Preview
 {
-    [AssetPreview(typeof(SoundAsset), typeof(SoundPreviewView))]
+    [AssetPreview<SoundAsset>]
     public class SoundPreview : BuildAssetPreview<SoundAsset>
     {
         private IDispatcherService dispatcher;

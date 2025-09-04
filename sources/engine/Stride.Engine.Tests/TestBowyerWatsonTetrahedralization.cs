@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ namespace Stride.Engine.Tests
         public void TestCube()
         {
             // Build cube from (0,0,0) to (1,1,1)
-            var positions = new FastList<Vector3>();
+            var positions = new List<Vector3>();
             for (int i = 0; i < 8; ++i)
             {
                 positions.Add(new Vector3

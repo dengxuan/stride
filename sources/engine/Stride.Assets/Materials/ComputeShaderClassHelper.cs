@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -16,6 +16,7 @@ namespace Stride.Assets.Materials
         private static readonly Dictionary<string, Type> ComputeColorParameterTypeMapping = new Dictionary<string, Type>
         {
             {"Texture2D", typeof(ComputeColorParameterTexture) },
+            {"bool", typeof(ComputeColorParameterBool) },
             {"int", typeof(ComputeColorParameterInt) },
             {"float", typeof(ComputeColorParameterFloat) },
             {"float2", typeof(ComputeColorParameterFloat2) },

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -35,7 +35,7 @@ namespace Stride.Assets.Tests
 
                 var file = new PackageLoadingAssetFile(sceneFile, Path.GetDirectoryName(sceneFile));
 
-                var context = new AssetMigrationContext(null, file.ToReference(), file.FilePath.ToWindowsPath(), logger);
+                var context = new AssetMigrationContext(null, file.ToReference(), file.FilePath.ToOSPath(), logger);
                 var needMigration = AssetMigration.MigrateAssetIfNeeded(context, file, "Stride");
 
                 foreach (var message in logger.Messages)

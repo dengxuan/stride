@@ -1,10 +1,11 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Microsoft.Build.Locator;
 using Mono.Options;
 using Stride.Core.Assets.CompilerApp.Tasks;
@@ -16,7 +17,20 @@ namespace Stride.Core.Tasks
     {
         public static int Main(string[] args)
         {
-            MSBuildLocator.RegisterDefaults();
+            try
+            {
+                MSBuildLocator.RegisterDefaults();
+            }
+            catch (InvalidOperationException e) when (e.Message.StartsWith("No instances of MSBuild could be detected.", StringComparison.Ordinal))
+            {
+                // When tasks running through build tools throw, it logs an obtuse 'The command [...]/Stride.Core.Tasks.exe [...] exited with code - x'
+                // message requiring the user to dig in the output to figure out what happened.
+                // The following ensures that a clear message is logged before the stuff above is shown.
+                // Do note that the 'error' word in the message is essential for it to be logged,
+                // direct any message about this peculiar 'feature' over to Microsoft, thanks !
+                Console.Error.WriteLine($@"error {typeof(Program).Namespace}: No supported instance of MSBuild could be detected, make sure you have .Net SDK {Environment.Version.Major}.{Environment.Version.Minor} installed");
+                throw;
+            }
             return RealMain(args);
         }
 
@@ -27,7 +41,7 @@ namespace Stride.Core.Tasks
 
             var p = new OptionSet
             {
-                "Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp) All Rights Reserved",
+                "Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp) All Rights Reserved",
                 "Stride Router Server - Version: "
                 +
                 String.Format(
@@ -64,6 +78,9 @@ namespace Stride.Core.Tasks
                 {
                     case "locate-devenv":
                     {
+                        if(!OperatingSystem.IsWindows())
+                            throw new OptionException("This option is only available on Windows", "");
+                            
                         if (commandArgs.Count != 2)
                             throw new OptionException("Need one extra argument", "");
                         var devenvPath = LocateDevenv.FindDevenv(commandArgs[1]);

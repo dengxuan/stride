@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 #region Copyright and license
@@ -39,9 +39,9 @@ using Stride.Core.Mathematics;
 using Stride.Core.Presentation.Collections;
 using Stride.Core.Presentation.Drawing;
 using Stride.Core.Presentation.Extensions;
-using Stride.Core.Presentation.ViewModel;
 using Stride.Core.Quantum;
 using Stride.Animations;
+using Stride.Core.Presentation.ViewModels;
 
 namespace Stride.Assets.Presentation.CurveEditor.ViewModels
 {

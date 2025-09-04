@@ -1,17 +1,12 @@
 ﻿<Project>
   <PropertyGroup>
     <StrideRuntime>true</StrideRuntime>
-    <StrideRuntimeNetStandard>true</StrideRuntimeNetStandard>
   </PropertyGroup>
 
   <Import Project="..\..\targets\Stride.Core.props" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
   <PropertyGroup>
-    <ProductVersion>9.0.30729</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <SignAssembly>false</SignAssembly>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <StrideBuildTags>*</StrideBuildTags>
     <AssemblyName>Stride.Irony</AssemblyName>
@@ -78,6 +73,5 @@
   </ItemGroup>
   
   <Import Project="$(StrideSdkTargets)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 
 </Project>

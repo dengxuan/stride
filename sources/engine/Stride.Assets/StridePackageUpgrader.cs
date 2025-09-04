@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -95,7 +95,7 @@ namespace Stride.Assets
                 if (assetFile.Deleted)
                     continue;
 
-                var context = new AssetMigrationContext(dependentPackage, assetFile.ToReference(), assetFile.FilePath.ToWindowsPath(), log);
+                var context = new AssetMigrationContext(dependentPackage, assetFile.ToReference(), assetFile.FilePath.ToOSPath(), log);
                 AssetMigration.MigrateAssetIfNeeded(context, assetFile, dependencyName, maxVersion);
             }
         }
@@ -137,19 +137,51 @@ namespace Stride.Assets
             }
 
             // Update NuGet references
-            var projectFullPath = (dependentPackage.Container as SolutionProject)?.FullPath;
+            var solutionProject = dependentPackage.Container as SolutionProject;
+            var projectFullPath = solutionProject?.FullPath;
             if (projectFullPath != null)
             {
                 try
                 {
-                    var project = VSProjectHelper.LoadProject(projectFullPath.ToWindowsPath());
+                    var project = VSProjectHelper.LoadProject(projectFullPath.ToOSPath());
                     var isProjectDirty = false;
+                    
+                    List<Microsoft.Build.Evaluation.ProjectItem> packageReferences = new();
+                    foreach(var package in project.GetItems("PackageReference"))
+                    {
+                        bool addPackage = true;
+                        for (int i = 0; i < StridePackagesToSkipUpgrade.PackageNames.Length; i++)
+                        {
+                            if (package.EvaluatedInclude.StartsWith(StridePackagesToSkipUpgrade.PackageNames[i])
+                                || StridePackagesToSkipUpgrade.PackageNames[i].Equals(package.EvaluatedInclude))
+                            {
+                                addPackage = false;
+                            }
+                        }
 
-                    var packageReferences = project.GetItems("PackageReference").ToList();
+                        if(addPackage)
+                        {
+                            packageReferences.Add(package);
+                        }
+                    }
+
+                    // Remove Stride reference for older executable projects (it was necessary in the past due to runtime.json)
+                    if (dependency.Version.MinVersion < new PackageVersion("4.1.0.0")
+                        && solutionProject.Type == ProjectType.Executable
+                        && (solutionProject.Platform == PlatformType.macOS || solutionProject.Platform == PlatformType.Linux))
+                    {
+                        var strideReference = packageReferences.FirstOrDefault(x => x.EvaluatedInclude == "Stride");
+                        if (strideReference != null)
+                        {
+                            packageReferences.Remove(strideReference);
+                            project.RemoveItem(strideReference);
+                            isProjectDirty = true;
+                        }
+                    }
 
                     foreach (var packageReference in packageReferences)
                     {
-                        if (packageReference.EvaluatedInclude.StartsWith("Stride.") && packageReference.GetMetadataValue("Version") != CurrentVersion)
+                        if (packageReference.EvaluatedInclude.StartsWith("Stride.", StringComparison.Ordinal) && packageReference.GetMetadataValue("Version") != CurrentVersion)
                         {
                             packageReference.SetMetadataValue("Version", CurrentVersion).Xml.ExpressedAsAttribute = true;
                             foreach (var metadata in packageReference.Metadata)
@@ -198,6 +230,54 @@ namespace Stride.Assets
 
                                 if (!shaderFile.IsImported)
                                     project.RemoveItem(shaderFile);
+                            }
+                        }
+                    }
+
+                    if (dependency.Version.MinVersion < new PackageVersion("4.1.0.0") && solutionProject != null)
+                    {
+                        var tfm = project.GetProperty("TargetFramework");
+                        if (tfm != null)
+                        {
+                            // Library
+                            if (tfm.EvaluatedValue == "netstandard2.0"
+                                || (tfm.EvaluatedValue.StartsWith("net4", StringComparison.Ordinal) && solutionProject.Type == ProjectType.Library))
+                            {
+                                // In case it's a single TargetFramework, add the "s" at the end
+                                tfm.Xml.Name = "TargetFrameworks";
+                                tfm.Xml.Value = "net6.0";
+                                isProjectDirty = true;
+                                project.ReevaluateIfNecessary();
+                            }
+                            // Executable
+                            else if ((tfm.EvaluatedValue.StartsWith("net4", StringComparison.Ordinal) || tfm.EvaluatedValue.StartsWith("net5", StringComparison.Ordinal)) && solutionProject.Type == ProjectType.Executable)
+                            {
+                                tfm.Xml.Value = solutionProject.Platform == PlatformType.Windows ? "net6.0-windows" : "net6.0";
+                                isProjectDirty = true;
+                                project.ReevaluateIfNecessary();
+                            }
+                        }
+                    }
+
+                    if (dependency.Version.MinVersion < new PackageVersion("4.2.0.0") && solutionProject != null)
+                    {
+                        var tfm = project.GetProperty("TargetFramework")
+                            ?? project.GetProperty("TargetFrameworks");
+                        if (tfm != null)
+                        {
+                            // Library
+                            if (tfm.EvaluatedValue.StartsWith("net6", StringComparison.Ordinal) && solutionProject.Type == ProjectType.Library)
+                            {
+                                // In case it's a single TargetFramework, add the "s" at the end
+                                tfm.Xml.Name = "TargetFrameworks";
+                                tfm.Xml.Value = "net8.0";
+                                isProjectDirty = true;
+                            }
+                            // Executable
+                            else if ((tfm.EvaluatedValue.StartsWith("net6", StringComparison.Ordinal)) && solutionProject.Type == ProjectType.Executable)
+                            {
+                                tfm.Xml.Value = solutionProject.Platform == PlatformType.Windows ? "net8.0-windows" : "net8.0";
+                                isProjectDirty = true;
                             }
                         }
                     }

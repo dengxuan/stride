@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Globalization;
@@ -52,8 +52,7 @@ namespace Stride.Core.Shaders.Grammar
             else if (tokenInfo.TokenCategory == TokenCategory.Typename || tokenInfo.TokenCategory == TokenCategory.Keyword)
             {
                 var keyMap = (tokenInfo.IsCaseInsensitive) ? caseInsensitiveKeywordToTerminal : keywordToTerminal;
-                if (!keyMap.ContainsKey(term.Name))
-                    keyMap.Add(term.Name, term);
+                keyMap.TryAdd(term.Name, term);
             }
             else
             {

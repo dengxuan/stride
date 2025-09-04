@@ -1,8 +1,9 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Stride.Core;
 using Stride.Core.Collections;
 using Stride.Core.Mathematics;
@@ -178,7 +179,7 @@ namespace Stride.Animations
                     if (factorLeft > 0.0f && factorRight == 0.0f)
                     {
                         *resultData++ = 1.0f;
-                        Utilities.CopyMemory((IntPtr)resultData, (IntPtr)sourceLeftData, channel.Size);
+                        Unsafe.CopyBlockUnaligned(resultData, sourceLeftData, (uint)channel.Size);
                         continue;
                     }
 
@@ -186,7 +187,7 @@ namespace Stride.Animations
                     if (factorRight > 0.0f && factorLeft == 0.0f)
                     {
                         *resultData++ = 1.0f;
-                        Utilities.CopyMemory((IntPtr)resultData, (IntPtr)sourceRightData, channel.Size);
+                        Unsafe.CopyBlockUnaligned(resultData, sourceRightData, (uint)channel.Size);
                         continue;
                     }
 
@@ -201,7 +202,10 @@ namespace Stride.Animations
                             switch (channel.BlendType)
                             {
                                 case BlendType.Blit:
-                                    Utilities.CopyMemory((IntPtr)resultData, (IntPtr)(blendFactor < 0.5f ? sourceLeftData : sourceRightData), channel.Size);
+                                    Unsafe.CopyBlockUnaligned(
+                                        resultData,
+                                        blendFactor < 0.5f ? sourceLeftData : sourceRightData,
+                                        (uint)channel.Size);
                                     break;
                                 case BlendType.Float1:
                                     *resultData = MathUtil.Lerp(*sourceLeftData, *sourceRightData, blendFactor);
@@ -225,7 +229,7 @@ namespace Stride.Animations
                             switch (channel.BlendType)
                             {
                                 case BlendType.Blit:
-                                    Utilities.CopyMemory((IntPtr)resultData, (IntPtr)sourceLeftData, channel.Size);
+                                    Unsafe.CopyBlockUnaligned(resultData, sourceLeftData, (uint)channel.Size);
                                     break;
                                 case BlendType.Float2:
                                     Vector2 rightValue2;
@@ -253,7 +257,7 @@ namespace Stride.Animations
                             switch (channel.BlendType)
                             {
                                 case BlendType.Blit:
-                                    Utilities.CopyMemory((IntPtr)resultData, (IntPtr)sourceLeftData, channel.Size);
+                                    Unsafe.CopyBlockUnaligned(resultData, sourceLeftData, (uint)channel.Size);
                                     break;
                                 case BlendType.Float2:
                                     Vector2 rightValue2;
@@ -290,13 +294,13 @@ namespace Stride.Animations
         /// </summary>
         /// <param name="animationOperations">The animation operations to perform.</param>
         /// <param name="result">The optional result (if not null, it expects the final stack to end up with this element).</param>
-        public void Compute(FastList<AnimationOperation> animationOperations, ref AnimationClipResult result)
+        public void Compute(List<AnimationOperation> animationOperations, ref AnimationClipResult result)
         {
             // Clear animation stack
             animationStack.Clear();
 
             // Apply first operation (should be a push), directly into result (considered first item in the stack)
-            var animationOperation0 = animationOperations.Items[0];
+            var animationOperation0 = animationOperations[0];
 
             if (animationOperation0.Type != AnimationOperationType.Push)
                 throw new InvalidOperationException("First operation should be a push");
@@ -331,7 +335,7 @@ namespace Stride.Animations
 
             for (int index = 1; index < animationOperations.Count; index++)
             {
-                var animationOperation = animationOperations.Items[index];
+                var animationOperation = animationOperations[index];
 
                 ApplyAnimationOperation(ref animationOperation);
             }

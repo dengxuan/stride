@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.Threading.Tasks;
@@ -24,11 +24,10 @@ namespace Stride.Core.Assets.Editor.Services
         Task EditorInitialization { get; }
 
         /// <summary>
-        /// Initializes the editor view with the given asset.
+        /// Initializes the editor view with the editor.
         /// </summary>
-        /// <param name="asset">The asset for which to initialize the editor view.</param>
-        /// <returns>A task that completes when the initialization is done and contains the <see cref="IAssetEditorViewModel"/> as result.</returns>
-        [ItemCanBeNull]
-        Task<IAssetEditorViewModel> InitializeEditor([NotNull] AssetViewModel asset);
+        /// <param name="editor">The editor for which to initialize the editor view.</param>
+        /// <returns>A task that completes when the initialization is done.</returns>
+        Task<bool> InitializeEditor([NotNull] IAssetEditorViewModel editor);
     }
 }

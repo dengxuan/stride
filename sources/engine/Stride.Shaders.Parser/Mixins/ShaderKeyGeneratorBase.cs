@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -169,9 +169,9 @@ namespace Stride.Shaders.Parser.Mixins
                         }
 
                         // Rename float2/3/4 to Vector2/3/4
-                        if (initialValueString.StartsWith("float2")
-                            || initialValueString.StartsWith("float3")
-                            || initialValueString.StartsWith("float4"))
+                        if (initialValueString.StartsWith("float2", StringComparison.Ordinal)
+                            || initialValueString.StartsWith("float3", StringComparison.Ordinal)
+                            || initialValueString.StartsWith("float4", StringComparison.Ordinal))
                             initialValueString = initialValueString.Replace("float", "new Vector");
                         else if (IsArrayStatus)
                         {
@@ -328,7 +328,7 @@ namespace Stride.Shaders.Parser.Mixins
         protected static bool IsBufferType(TypeBase type)
         {
             // TODO we should improve AST type system
-            return type is GenericBaseType && type.Name.Text.Contains("Buffer");
+            return (type is GenericBaseType && type.Name.Text.Contains("Buffer")) || type.IsByteAddressBufferType();
         }
     }
 }

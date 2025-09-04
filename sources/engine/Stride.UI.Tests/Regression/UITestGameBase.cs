@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -93,13 +93,7 @@ namespace Stride.UI.Tests.Regression
             UIComponent.ResolutionStretch = ResolutionStretch.FixedWidthFixedHeight;
             Scene.Entities.Add(UIRoot);
 
-            UI = Services.GetService<UISystem>();
-            if (UI == null)
-            {
-                UI = new UISystem(Services);
-                Services.AddService(UI);
-                GameSystems.Add(UI);
-            }
+            UI = Services.GetOrCreate<UISystem>();
 
             Camera = new Entity("Scene camera") { new CameraComponent { Slot = SceneSystem.GraphicsCompositor.Cameras[0].ToSlotId() } };
             Camera.Transform.Position = new Vector3(0, 0, 1000);

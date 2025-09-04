@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2013 SharpDX - Alexandre Mutel
@@ -127,6 +127,13 @@ namespace Stride.Games
         /// </summary>
         /// <value><c>true</c> if visible; otherwise, <c>false</c>.</value>
         public abstract bool Visible { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the opacity of the window.
+        /// </summary>
+        /// <value>1.0d is fully opaque, 0.0d is fully transparent. The value will automatically be clamped to [0.0d, 1.0d].</value>
+        /// <remarks>The default value, if the window is null, is considered fully opaque (1.0d).</remarks>
+        public abstract double Opacity { get; set; }
 
         /// <summary>
         /// Gets or sets the position of the window on the screen.
@@ -153,7 +160,7 @@ namespace Stride.Games
             {
                 if (value == null)
                 {
-                    throw new ArgumentNullException("value");
+                    throw new ArgumentNullException("value", $"{nameof(Title)} can not be null");
                 }
 
                 if (title != value)
@@ -178,6 +185,12 @@ namespace Stride.Games
         public Int2 PreferredFullscreenSize { get; set; } = new Int2(1920, 1080);
 
         /// <summary>
+        /// Whether the fullscreen mode should be a borderless window matching the desktop size.
+        /// </summary>
+        /// <remarks>This flag is currently ignored on all game platforms other than SDL.</remarks>
+        public bool FullscreenIsBorderlessWindow { get; set; } = false;
+
+        /// <summary>
         /// Switches between fullscreen and windowed mode.
         /// </summary>
         public bool IsFullscreen
@@ -194,7 +207,7 @@ namespace Stride.Games
         }
 
         /// <summary>
-        /// Allow the GraphicsDeviceMagnager to set the actual window state after applying the device changes.
+        /// Allow the GraphicsDeviceManager to set the actual window state after applying the device changes.
         /// </summary>
         /// <param name="isReallyFullscreen"></param>
         internal void SetIsReallyFullscreen(bool isReallyFullscreen)
@@ -233,6 +246,20 @@ namespace Stride.Games
 
         internal abstract void Run();
 
+        /// <summary>
+        /// Sets the size of the client area and triggers the <see cref="ClientSizeChanged"/> event.
+        /// This will trigger a backbuffer resize too.
+        /// </summary>
+        public void SetSize(Int2 size)
+        {
+            Resize(size.X, size.Y);
+            OnClientSizeChanged(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Only used internally by the device managers when they adapt the window size to the backbuffer size.
+        /// Resizes the window, without sending the resized event.
+        /// </summary>
         internal abstract void Resize(int width, int height);
 
         public virtual IMessageLoop CreateUserManagedMessageLoop()
@@ -282,6 +309,11 @@ namespace Stride.Games
         protected void OnFullscreenToggle(object source, EventArgs e)
         {
             IsFullscreen = !IsFullscreen;
+        }
+
+        protected void OnDisableFullScreen(object source, EventArgs e)
+        {
+            IsFullscreen = false;
         }
 
         protected void OnClosing(object source, EventArgs e)

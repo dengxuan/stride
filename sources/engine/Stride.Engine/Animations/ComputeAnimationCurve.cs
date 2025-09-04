@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #pragma warning disable SA1402 // File may only contain a single type
 using System.Collections.Generic;
@@ -25,7 +25,7 @@ namespace Stride.Animations
         public TrackingCollection<AnimationKeyFrame<T>> KeyFrames { get; set; } = new TrackingCollection<AnimationKeyFrame<T>>();
 
         // TODO This list will become AnimationCurve<T>
-        private FastList<AnimationKeyFrame<T>> sortedKeys = new FastList<AnimationKeyFrame<T>>(); 
+        private List<AnimationKeyFrame<T>> sortedKeys = []; 
 
         private int framesCount = 0;
         private bool HasChanged()

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -13,7 +13,6 @@ using Stride.Core.IO;
 using Stride.Core.ProjectTemplating;
 using Stride.Graphics;
 using Stride.Shaders.Parser.Mixins;
-using Stride.Core.VisualStudio;
 using Stride.Core.Extensions;
 
 namespace Stride.Assets.Templates
@@ -66,19 +65,19 @@ namespace Stride.Assets.Templates
 
             // Setup the ProjectGameGuid to be accessible from exec (in order to be able to link to the game project.
             AddOption(parameters, "ProjectGameGuid", (package.Container as SolutionProject)?.Id ?? Guid.Empty);
-            AddOption(parameters, "ProjectGameRelativePath", (package.Container as SolutionProject)?.FullPath.MakeRelative(parameters.OutputDirectory).ToWindowsPath());
+            AddOption(parameters, "ProjectGameRelativePath", (package.Container as SolutionProject)?.FullPath.MakeRelative(parameters.OutputDirectory).ToOSPath());
             AddOption(parameters, "PackageGameAssemblyName", package.Meta.Name);
 
             // Sample templates still have .Game in their name
             var packageNameWithoutGame = package.Meta.Name;
-            if (packageNameWithoutGame.EndsWith(".Game"))
-                packageNameWithoutGame = packageNameWithoutGame.Substring(0, packageNameWithoutGame.Length - ".Game".Length);
+            if (packageNameWithoutGame.EndsWith(".Game", StringComparison.Ordinal))
+                packageNameWithoutGame = packageNameWithoutGame[..^".Game".Length];
 
             AddOption(parameters, "PackageGameName", packageNameWithoutGame);
             AddOption(parameters, "PackageGameDisplayName", package.Meta.Title ?? packageNameWithoutGame);
             // Escape illegal characters for the short name
             AddOption(parameters, "PackageGameNameShort", Utilities.BuildValidClassName(packageNameWithoutGame.Replace(" ", string.Empty)));
-            AddOption(parameters, "PackageGameRelativePath", package.FullPath.MakeRelative(parameters.OutputDirectory).ToWindowsPath());
+            AddOption(parameters, "PackageGameRelativePath", package.FullPath.MakeRelative(parameters.OutputDirectory).ToOSPath());
 
             // Override namespace
             AddOption(parameters, "Namespace", parameters.Namespace ?? Utilities.BuildValidNamespaceName(packageNameWithoutGame));
@@ -119,7 +118,10 @@ namespace Stride.Assets.Templates
                     package.Session.Projects.Remove(existingProject);
                 }
 
-                var projectDirectory = Path.GetDirectoryName(projectFullPath.ToWindowsPath());
+                AddOption(parameters, "TargetFramework", platform.Platform.TargetFramework);
+                AddOption(parameters, "RuntimeIdentifier", platform.Platform.RuntimeIdentifier);
+
+                var projectDirectory = Path.GetDirectoryName(projectFullPath.ToOSPath());
                 if (projectDirectory != null && Directory.Exists(projectDirectory))
                 {
                     try
@@ -150,7 +152,7 @@ namespace Stride.Assets.Templates
             foreach (var project in projectsToRemove)
             {
                 var projectFullPath = project.FullPath;
-                var projectDirectory = Path.GetDirectoryName(projectFullPath.ToWindowsPath());
+                var projectDirectory = Path.GetDirectoryName(projectFullPath.ToOSPath());
                 if (projectDirectory != null && Directory.Exists(projectDirectory))
                 {
                     try
@@ -173,8 +175,8 @@ namespace Stride.Assets.Templates
         public static UFile GeneratePlatformProjectLocation(string name, Package package, SolutionPlatform platform)
         {
             // Remove .Game suffix
-            if (name.EndsWith(".Game"))
-                name = name.Substring(0, name.Length - ".Game".Length);
+            if (name.EndsWith(".Game", StringComparison.Ordinal))
+                name = name[..^".Game".Length];
 
             var projectName = Utilities.BuildValidNamespaceName(name) + "." + platform.Name;
             return UPath.Combine(UPath.Combine(package.RootDirectory.GetParent(), (UDirectory)projectName), (UFile)(projectName + ".csproj"));
@@ -192,7 +194,7 @@ namespace Stride.Assets.Templates
             // Special case for sdfx files
             foreach (var file in generatedFiles)
             {
-                if (file.EndsWith(".sdfx"))
+                if (file.EndsWith(".sdfx", StringComparison.OrdinalIgnoreCase))
                 {
                     ConvertXkfxToCSharp(file);
                 }

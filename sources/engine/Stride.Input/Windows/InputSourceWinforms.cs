@@ -1,7 +1,7 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
-#if STRIDE_PLATFORM_WINDOWS_DESKTOP && (STRIDE_UI_WINFORMS || STRIDE_UI_WPF)
+#if (STRIDE_UI_WINFORMS || STRIDE_UI_WPF)
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,8 +30,7 @@ namespace Stride.Input
         private Win32Native.WndProc inputWndProc;
 
         // My input devices
-        private GameContext<Control> gameContext;
-        private Control uiControl;
+        private readonly Control uiControl;
         private InputManager input;
 
         /// <summary>
@@ -39,13 +38,14 @@ namespace Stride.Input
         /// </summary>
         public bool IsMousePositionLocked { get; protected set; }
 
+        public InputSourceWinforms(Control uiControl)
+        {
+            this.uiControl = uiControl ?? throw new ArgumentNullException(nameof(uiControl));
+        }
+
         public override void Initialize(InputManager inputManager)
         {
             input = inputManager;
-            gameContext = inputManager.Game.Context as GameContext<Control>;
-            uiControl = gameContext.Control;
-            uiControl.LostFocus += UIControlOnLostFocus;
-            MissingInputHack();
 
             // Hook window proc
             defaultWndProc = Win32Native.GetWindowLong(uiControl.Handle, Win32Native.WindowLongType.WndProc);
@@ -60,40 +60,6 @@ namespace Stride.Input
 
             mouse = new MouseWinforms(this, uiControl);
             RegisterDevice(mouse);
-        }
-
-        /// <summary>
-        /// This function houses a hack to fix the window missing some input events,
-        /// see Stride pull #181 for more information (https://github.com/stride3d/stride/pull/181).
-        /// TODO: Find a proper solution to replace this workaround.
-        /// </summary>
-        private void MissingInputHack()
-        {
-#if STRIDE_INPUT_RAWINPUT
-            Device.RegisterDevice(SharpDX.Multimedia.UsagePage.Generic, SharpDX.Multimedia.UsageId.GenericKeyboard, DeviceFlags.None);
-            Device.KeyboardInput += (sender, args) =>
-            {
-                switch (args.State)
-                {
-                    case KeyState.SystemKeyDown:
-                    case KeyState.ImeKeyDown:
-                    case KeyState.KeyDown:
-                    {
-                        keyboard?.HandleKeyUp(args.Key);
-                        heldKeys.Add(args.Key);
-                        break;
-                    }
-                    case KeyState.SystemKeyUp:
-                    case KeyState.ImeKeyUp:
-                    case KeyState.KeyUp:
-                    {
-                        heldKeys.Remove(args.Key);
-                        keyboard?.HandleKeyDown(args.Key);
-                        break;
-                    }
-                }
-            };
-#endif
         }
 
         public override void Dispose()
@@ -124,20 +90,6 @@ namespace Stride.Input
             
                 keysToRelease.Clear();
             }
-        }
-        
-        private void UIControlOnLostFocus(object sender, EventArgs eventArgs)
-        {
-            // Release keys/buttons when control focus is lost (this prevents some keys getting stuck when a focus loss happens when moving the camera)
-            if (keyboard != null)
-            {
-                foreach (var key in keyboard.KeyRepeats.Keys.ToArray())
-                {
-                    keyboard.HandleKeyUp(key);
-                }
-            }
-
-            mouse?.ForceReleaseButtons();
         }
 
         internal void HandleKeyDown(IntPtr wParam, IntPtr lParam)
@@ -196,7 +148,7 @@ namespace Stride.Input
             {
                 // We need to check the scan code to check which SHIFT key it is.
                 var scanCode = (lParam & 0x00FF0000) >> 16;
-                return (scanCode != 36) ? WinFormsKeys.LShiftKey : WinFormsKeys.RShiftKey;
+                return (scanCode != 0x36) ? WinFormsKeys.LShiftKey : WinFormsKeys.RShiftKey;
             }
 
             if (virtualKey == WinFormsKeys.Menu)

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Stride.Core;
@@ -59,14 +59,7 @@ namespace Stride.UI.Renderers
             Content = services.GetSafeServiceAs<IContentManager>();
             GraphicsDeviceService = services.GetSafeServiceAs<IGraphicsDeviceService>();
 
-            UI = services.GetService<UISystem>();
-            if (UI == null)
-            {
-                UI = new UISystem(services);
-                services.AddService(UI);
-                var gameSystems = services.GetService<IGameSystemCollection>();
-                gameSystems?.Add(UI);
-            }
+            UI = services.GetOrCreate<UISystem>();
         }
 
         /// <summary>

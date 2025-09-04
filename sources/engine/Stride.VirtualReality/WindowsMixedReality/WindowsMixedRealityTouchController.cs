@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 #if STRIDE_GRAPHICS_API_DIRECT3D11 && STRIDE_PLATFORM_UWP
@@ -68,6 +68,8 @@ namespace Stride.VirtualReality
         public override bool IsTouchedDown(TouchControllerButton button) => !IsButtonTouched(button, previousState) ? IsButtonTouched(button, currentState) : false;
 
         public override bool IsTouchReleased(TouchControllerButton button) => IsButtonTouched(button, previousState) ? !IsButtonTouched(button, currentState) : false;
+        
+        public override ControllerHaptics HapticsSupport => ControllerHaptics.None;
 
         public void Update(PerceptionTimestamp timeStamp, SpatialCoordinateSystem coordinateSystem)
         {
@@ -156,6 +158,9 @@ namespace Stride.VirtualReality
             currentLinearVelocity = location.Velocity?.ToVector3() ?? currentLinearVelocity;
             currentAngularVelocity = location.AngularVelocity?.ToVector3() ?? currentAngularVelocity;
         }
+
+        //TODO: implement this
+        public override async Task Vibrate(int duration, float frequency, float amplitude) { }
     }
 }
 

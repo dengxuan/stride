@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System.Collections.Generic;
 using Stride.Core;
@@ -19,11 +19,11 @@ namespace Stride.Shaders
         /// </summary>
         public EffectReflection()
         {
-            SamplerStates = new List<EffectSamplerStateBinding>();
-            ResourceBindings = new FastList<EffectResourceBindingDescription>();
-            ConstantBuffers = new List<EffectConstantBufferDescription>();
-            ShaderStreamOutputDeclarations = new List<ShaderStreamOutputDeclarationEntry>();
-            InputAttributes = new FastList<ShaderInputAttributeDescription>();
+            SamplerStates = [];
+            ResourceBindings = [];
+            ConstantBuffers = [];
+            ShaderStreamOutputDeclarations = [];
+            InputAttributes = [];
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Stride.Shaders
         /// Gets the parameter binding descriptions.
         /// </summary>
         /// <value>The resource bindings.</value>
-        public FastList<EffectResourceBindingDescription> ResourceBindings { get; set; }
+        public List<EffectResourceBindingDescription> ResourceBindings { get; set; }
 
         /// <summary>
         /// Gets the constant buffer descriptions (if any).
@@ -62,6 +62,6 @@ namespace Stride.Shaders
         /// <value>The stream output rasterized stream.</value>
         public int StreamOutputRasterizedStream { get; set; }
 
-        public FastList<ShaderInputAttributeDescription> InputAttributes { get; set; }
+        public List<ShaderInputAttributeDescription> InputAttributes { get; set; }
     }
 }

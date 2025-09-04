@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -33,7 +33,7 @@ namespace Stride.Assets
                     // Search for all source files in project directory
                     foreach (var extension in new[] { new { Extension = ".csproj", Type = XenkoToStrideRenameHelper.StrideContentType.Project }, new { Extension = ".cs", Type = XenkoToStrideRenameHelper.StrideContentType.Code } })
                     {
-                        var files = allFiles.Where(file => file.ToLower().EndsWith(extension.Extension));
+                        var files = allFiles.Where(file => file.EndsWith(extension.Extension, StringComparison.OrdinalIgnoreCase));
                         foreach (var file in files)
                         {
                             XenkoToStrideRenameHelper.RenameStrideFile(file, extension.Type);

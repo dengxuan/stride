@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -55,7 +55,11 @@ namespace Stride.Core.Assets.Tests
 
             var ids = new List<Tuple<UFile, ObjectId>>();
             FileVersionManager.Instance.ComputeFileHashAsync(files, (file, id) => ids.Add(new Tuple<UFile, ObjectId>(file, id)));
-            Thread.Sleep(200);
+
+            while (FileVersionManager.Instance.PeekAsyncRequestsLeft != 0)
+            {
+                Thread.Sleep(100);
+            }
 
             Assert.Equal(files.Count, ids.Count);
 

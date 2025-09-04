@@ -1,8 +1,9 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System.Collections;
 using System.Collections.Generic;
 using Stride.Core;
+using Stride.Core.Diagnostics;
 
 namespace Stride.Rendering.Compositing
 {
@@ -25,7 +26,9 @@ namespace Stride.Rendering.Compositing
         protected override void DrawCore(RenderContext context, RenderDrawContext drawContext)
         {
             foreach (var child in Children)
+            {
                 child.Draw(drawContext);
+            }
         }
 
         public void Add(ISceneRenderer child)

@@ -1,17 +1,17 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
 using System.Runtime.CompilerServices;
 using Stride.Core;
 using Stride.Core.Annotations;
+using Stride.Core.Extensions;
 using Stride.Core.Serialization.Contents;
 using Stride.Core.Storage;
 using Stride.Graphics;
 using Stride.Streaming;
 using Stride.Core.Diagnostics;
 using Stride.Media;
-using Stride.Audio;
 using Stride.Core.IO;
 using Stride.Games;
 

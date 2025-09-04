@@ -1,9 +1,11 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using Stride.Core;
 using Stride.Core.Collections;
 using Stride.Core.Diagnostics;
@@ -24,7 +26,7 @@ namespace Stride.Rendering.LightProbes
     {
         public const int LambertHamonicOrder = 3;
 
-        public static Dictionary<LightProbeComponent, FastList<Color3>> GenerateCoefficients(ISceneRendererContext context)
+        public static Dictionary<LightProbeComponent, List<Color3>> GenerateCoefficients(ISceneRendererContext context)
         {
             using (var cubemapRenderer = new CubemapSceneRenderer(context, 256))
             {
@@ -38,7 +40,7 @@ namespace Stride.Rendering.LightProbes
                     RadianceMap = cubeTexture,
                 };
 
-                var lightProbesCoefficients = new Dictionary<LightProbeComponent, FastList<Color3>>();
+                var lightProbesCoefficients = new Dictionary<LightProbeComponent, List<Color3>>();
 
                 using (cubemapRenderer.DrawContext.PushRenderTargetsAndRestore())
                 {
@@ -66,7 +68,7 @@ namespace Stride.Rendering.LightProbes
                         lambertFiltering.Draw(cubemapRenderer.DrawContext);
 
                         var coefficients = lambertFiltering.PrefilteredLambertianSH.Coefficients;
-                        var lightProbeCoefficients = new FastList<Color3>();
+                        var lightProbeCoefficients = new List<Color3>();
                         for (int i = 0; i < coefficients.Length; i++)
                         {
                             lightProbeCoefficients.Add(coefficients[i] * SphericalHarmonics.BaseCoefficients[i]);
@@ -111,31 +113,39 @@ namespace Stride.Rendering.LightProbes
             }
         }
 
-        public static unsafe LightProbeRuntimeData GenerateRuntimeData(FastList<LightProbeComponent> lightProbes)
+        public static unsafe LightProbeRuntimeData GenerateRuntimeData(List<LightProbeComponent> lightProbes)
         {
             // TODO: Better check: coplanar, etc... (maybe the check inside BowyerWatsonTetrahedralization might be enough -- tetrahedron won't be in positive order)
             if (lightProbes.Count < 4)
                 throw new InvalidOperationException("Can't generate lightprobes if less than 4 of them exists.");
 
-            var lightProbePositions = new FastList<Vector3>();
+            var lightProbePositions = new List<Vector3>();
             var lightProbeCoefficients = new Color3[lightProbes.Count * LambertHamonicOrder * LambertHamonicOrder];
-            fixed (Color3* destColors = lightProbeCoefficients)
+            var destColors = lightProbeCoefficients.AsSpan();
+            #if false
+            ref var destColorsOrigin = ref destColors.GetPinnableReference();
+            #endif
+
+            for (var lightProbeIndex = 0; lightProbeIndex < lightProbes.Count; lightProbeIndex++)
             {
-                for (var lightProbeIndex = 0; lightProbeIndex < lightProbes.Count; lightProbeIndex++)
+                var lightProbe = lightProbes[lightProbeIndex];
+
+                // Copy light position
+                lightProbePositions.Add(lightProbe.Entity.Transform.WorldMatrix.TranslationVector);
+
+                // Copy coefficients
+                if (lightProbe.Coefficients != null)
                 {
-                    var lightProbe = lightProbes[lightProbeIndex];
-
-                    // Copy light position
-                    lightProbePositions.Add(lightProbe.Entity.Transform.WorldMatrix.TranslationVector);
-
-                    // Copy coefficients
-                    if (lightProbe.Coefficients != null)
+                    var lightProbeCoefStart = lightProbeIndex * LambertHamonicOrder * LambertHamonicOrder;
+                    for (var index = 0; index < LambertHamonicOrder * LambertHamonicOrder; index++)
                     {
-                        var lightProbeCoefStart = lightProbeIndex * LambertHamonicOrder * LambertHamonicOrder;
-                        for (var index = 0; index < LambertHamonicOrder * LambertHamonicOrder; index++)
-                        {
-                            destColors[lightProbeCoefStart + index] = index < lightProbe.Coefficients.Count ? lightProbe.Coefficients[index] : new Color3();
-                        }
+                        // TODO: PERF: will do bounds checks; if can be proven outside the loop that this is guaranteed inside bounds, invert the #if
+                        #if true
+                        destColors[lightProbeCoefStart + index] =
+                        #else
+                        Unsafe.Add(ref destColorsOrigin, lightProbeCoefStart + index) =
+                        #endif
+                             index < lightProbe.Coefficients.Count ? lightProbe.Coefficients[index] : default;
                     }
                 }
             }

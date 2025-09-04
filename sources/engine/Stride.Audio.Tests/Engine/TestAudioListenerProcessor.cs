@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -74,7 +74,7 @@ namespace Stride.Audio.Tests.Engine
             audio.AddListener(listComp1);
             audio.AddListener(listComp2);
 
-            listComp2Entity.Transform.RotationEulerXYZ = new Vector3((float)Math.PI/2,0,0);
+            listComp2Entity.Transform.RotationEulerXYZ = new Vector3(MathF.PI/2,0,0);
         }
 
         private void EntityPositionUpdate(Game game, int loopCount, int loopCountSum)
@@ -88,7 +88,7 @@ namespace Stride.Audio.Tests.Engine
 
         private void TestAddAudioSysThenEntitySysLoopImpl(Game game, int loopCount, int loopCountSum)
         {
-            Internal.Refactor.ThrowNotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
+            throw new NotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
             //var listenerProcessor = game.Entities.Processors.OfType<AudioListenerProcessor>().First();
 
             //if (loopCount == 1)
@@ -153,16 +153,16 @@ namespace Stride.Audio.Tests.Engine
             BuildEntityHierarchy();
             CreateAndComponentToEntities();
             
-            listComp2Entity.Transform.RotationEulerXYZ = new Vector3((float)Math.PI / 2, 0, 0);
+            listComp2Entity.Transform.RotationEulerXYZ = new Vector3(MathF.PI / 2, 0, 0);
 
-            Internal.Refactor.ThrowNotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
+            throw new NotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
             // game.Entities.Add(rootEntity);
         }
 
         private void TestAddEntitySysThenAudioSysLoopImpl(Game game, int loopCount, int loopCountSum)
         {
             var audio = game.Audio;
-            Internal.Refactor.ThrowNotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
+            throw new NotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
             //var listenerProcessor = game.Entities.Processors.OfType<AudioListenerProcessor>().First();
 
             //if (loopCount == 1)
@@ -260,16 +260,16 @@ namespace Stride.Audio.Tests.Engine
             audio.AddListener(listComp1);
             audio.AddListener(listComp2);
 
-            listComp2Entity.Transform.RotationEulerXYZ = new Vector3((float)Math.PI / 2, 0, 0);
+            listComp2Entity.Transform.RotationEulerXYZ = new Vector3(MathF.PI / 2, 0, 0);
 
-            Internal.Refactor.ThrowNotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
+            throw new NotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
             //game.Entities.Add(rootEntity);
         }
 
         private void TestRemoveListenerFromAudioSystemLoopImpl(Game game, int loopCount, int loopCountSum)
         {
             var audio = game.Audio;
-            Internal.Refactor.ThrowNotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
+            throw new NotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
             //var listenerProcessor = game.Entities.Processors.OfType<AudioListenerProcessor>().First();
 
             //var list1Data = listenerProcessor.MatchingEntitiesForDebug[listComp1Entity];
@@ -332,7 +332,7 @@ namespace Stride.Audio.Tests.Engine
         private void TestRemoveListenerFromEntitySystemLoopImpl(Game game, int loopCount, int loopCountSum)
         {
             var audio = game.Audio;
-            Internal.Refactor.ThrowNotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
+            throw new NotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
             //var listenerProcessor = game.Entities.Processors.OfType<AudioListenerProcessor>().First();
 
             //var list1Data = listenerProcessor.MatchingEntitiesForDebug[listComp1Entity];
@@ -379,7 +379,7 @@ namespace Stride.Audio.Tests.Engine
         {
             BuildEntityHierarchy();
             CreateAndComponentToEntities();
-            Internal.Refactor.ThrowNotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
+            throw new NotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
             //game.Entities.Add(rootEntity);
             game.Audio.AddListener(listComp1);
             game.Audio.AddListener(listComp2);
@@ -401,14 +401,14 @@ namespace Stride.Audio.Tests.Engine
 
             if (loopCount >= 10)
             {
-                listComp1Entity.Transform.RotationEulerXYZ = new Vector3((float)Math.PI / 2, 0, 0);
-                listComp2Entity.Transform.RotationEulerXYZ = new Vector3(0, (float)Math.PI / 2, 0);
+                listComp1Entity.Transform.RotationEulerXYZ = new Vector3(MathF.PI / 2, 0, 0);
+                listComp2Entity.Transform.RotationEulerXYZ = new Vector3(0, MathF.PI / 2, 0);
             }
         }
 
         private void UpdateListenerTestValues(Game game, int loopCount, int loopCountSum)
         {
-            Internal.Refactor.ThrowNotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
+            throw new NotImplementedException("TODO: UPDATE TO USE Scene and Graphics Composer"); 
             //var matchingEntities = game.Entities.Processors.OfType<AudioListenerProcessor>().First().MatchingEntitiesForDebug;
 
             //var dataComp1 = matchingEntities[listComp1Entity];

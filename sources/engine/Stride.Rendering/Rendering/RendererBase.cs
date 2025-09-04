@@ -1,8 +1,9 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
 using Stride.Core;
+using Stride.Core.Diagnostics;
 using Stride.Rendering.Compositing;
 
 namespace Stride.Rendering
@@ -45,6 +46,7 @@ namespace Stride.Rendering
         {
             if (Enabled)
             {
+                using var _ = Profiler.Begin(CPUProfilingKey);
                 PreDrawCoreInternal(context);
                 DrawCore(context);
                 PostDrawCoreInternal(context);

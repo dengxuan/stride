@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Microsoft.Build.Framework;
@@ -13,6 +13,7 @@ using Stride.Core.Diagnostics;
 using Stride.Core.IO;
 using Stride.Core.Yaml;
 using Stride.Core.Yaml.Events;
+using Task = Microsoft.Build.Utilities.Task;
 
 namespace Stride.Core.Assets.CompilerApp.Tasks
 {
@@ -40,7 +41,7 @@ namespace Stride.Core.Assets.CompilerApp.Tasks
 
             void RegisterItem(UFile targetFilePath)
             {
-                generatedItems.Add((targetFilePath.ToWindowsPath(), UPath.Combine("stride", targetFilePath.MakeRelative(outputPath)).ToWindowsPath()));
+                generatedItems.Add((targetFilePath.ToOSPath(), UPath.Combine("stride", targetFilePath.MakeRelative(outputPath)).ToOSPath()));
             }
 
             void TryCopyDirectory(UDirectory sourceDirectory, UDirectory targetDirectory, string exclude = null)
@@ -69,7 +70,7 @@ namespace Stride.Core.Assets.CompilerApp.Tasks
 
                 if (resourcesTargetToSource.TryGetValue(targetFilePath, out var otherResourceFilePath))
                 {
-                    logger.Error($"Could not copy resource file [{targetFilePath.MakeRelative(resourceOutputPath)}] because it exists in multiple locations: [{resourceFilePath.ToWindowsPath()}] and [{otherResourceFilePath.ToWindowsPath()}]");
+                    logger.Error($"Could not copy resource file [{targetFilePath.MakeRelative(resourceOutputPath)}] because it exists in multiple locations: [{resourceFilePath.ToOSPath()}] and [{otherResourceFilePath.ToOSPath()}]");
                 }
                 else
                 {
@@ -84,7 +85,7 @@ namespace Stride.Core.Assets.CompilerApp.Tasks
                     }
                     catch (Exception e)
                     {
-                        logger.Error($"Could not copy resource file from [{resourceFilePath.ToWindowsPath()}] to [{targetFilePath.MakeRelative(resourceOutputPath)}]", e);
+                        logger.Error($"Could not copy resource file from [{resourceFilePath.ToOSPath()}] to [{targetFilePath.MakeRelative(resourceOutputPath)}]", e);
                     }
                 }
             }
@@ -98,7 +99,7 @@ namespace Stride.Core.Assets.CompilerApp.Tasks
             }
 
             var assetOutputPath = UPath.Combine(outputPath, (UDirectory)"Assets");
-            var assets = Package.ListAssetFiles(logger, package, true, true, null);
+            var assets = Package.ListAssetFiles(package, true, true);
             if (assets.Count > 0)
             {
                 newPackage.AssetFolders.Add(new AssetFolder(assetOutputPath));
@@ -171,7 +172,7 @@ namespace Stride.Core.Assets.CompilerApp.Tasks
                             RegisterItem(outputFile);
                         }
                     }
-                    catch (YamlException e)
+                    catch (YamlException)
                     {
                         // Not a Yaml asset? Process it as binary (copy)
                         File.Copy(asset.FilePath, outputFile, true);

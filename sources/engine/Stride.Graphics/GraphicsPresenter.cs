@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2013 SharpDX - Alexandre Mutel
@@ -28,13 +28,21 @@ using Stride.Core.ReferenceCounting;
 namespace Stride.Graphics
 {
     /// <summary>
-    /// This class is a frontend to <see cref="SwapChain" /> and <see cref="SwapChain1" />.
+    /// This class is a frontend to <see cref="SharpDX.DXGI.SwapChain" /> and <see cref="SharpDX.DXGI.SwapChain1" />.
     /// </summary>
     /// <remarks>
     /// In order to create a new <see cref="GraphicsPresenter"/>, a <see cref="GraphicsDevice"/> should have been initialized first.
     /// </remarks>
     public abstract class GraphicsPresenter : ComponentBase
     {
+        /// <summary>
+        /// If not null the given interval will be used during a <see cref="Present"/> operation. 
+        /// </summary>
+        /// <remarks>
+        /// This is currently only supported by the Direct3D graphics implementation.
+        /// </remarks>
+        internal static readonly PropertyKey<PresentInterval?> ForcedPresentInterval = new PropertyKey<PresentInterval?>(nameof(ForcedPresentInterval), typeof(GraphicsDevice));
+
         private Texture depthStencilBuffer;
 
         /// <summary>
@@ -47,31 +55,7 @@ namespace Stride.Graphics
             GraphicsDevice = device;
             var description = presentationParameters.Clone();
 
-            // If we are creating a GraphicsPresenter with 
-            if (device.Features.HasSRgb && device.ColorSpace == ColorSpace.Linear)
-            {
-                // If the device support SRgb and ColorSpace is linear, we use automatically a SRgb backbuffer
-                if (description.BackBufferFormat == PixelFormat.R8G8B8A8_UNorm)
-                {
-                    description.BackBufferFormat = PixelFormat.R8G8B8A8_UNorm_SRgb;
-                }
-                else if (description.BackBufferFormat == PixelFormat.B8G8R8A8_UNorm)
-                {
-                    description.BackBufferFormat = PixelFormat.B8G8R8A8_UNorm_SRgb;
-                }
-            }
-            else if (!device.Features.HasSRgb)
-            {
-                // If the device does not support SRgb, but the backbuffer format asked is SRgb, convert it to non SRgb
-                if (description.BackBufferFormat == PixelFormat.R8G8B8A8_UNorm_SRgb)
-                {
-                    description.BackBufferFormat = PixelFormat.R8G8B8A8_UNorm;
-                }
-                else if (description.BackBufferFormat == PixelFormat.B8G8R8A8_UNorm_SRgb)
-                {
-                    description.BackBufferFormat = PixelFormat.B8G8R8A8_UNorm;
-                }
-            }
+            description.BackBufferFormat = NormalizeBackBufferFormat(description.BackBufferFormat);
 
             Description = description;
 
@@ -167,12 +151,54 @@ namespace Stride.Graphics
 
             Description.BackBufferWidth = width;
             Description.BackBufferHeight = height;
-            Description.BackBufferFormat = format;
+            Description.BackBufferFormat = NormalizeBackBufferFormat(format);
 
             ResizeBackBuffer(width, height, format);
             ResizeDepthStencilBuffer(width, height, format);
 
             GraphicsDevice.End();
+        }
+
+        /// <summary>
+        /// Sets the output color space of the presenter and the format for the backbuffer. Currently only supported by the DirectX backend.
+        /// Use the following combinations: <br />
+        /// Render to SDR Display with gamma 2.2: <see cref="ColorSpaceType.RgbFullG22NoneP709"/> with <see cref="PixelFormat.R8G8B8A8_UNorm"/>, <see cref="PixelFormat.R8G8B8A8_UNorm_SRgb"/>, <see cref="PixelFormat.B8G8R8A8_UNorm"/>, <see cref="PixelFormat.B8G8R8A8_UNorm"/>. <br />
+        /// Render to HDR Display in scRGB (standard linear), windows DWM will do the color conversion: <see cref="ColorSpaceType.RgbFullG10NoneP709"/> with <see cref="PixelFormat.R16G16B16A16_Float"/> <br />
+        /// Render to HDR Display in HDR10/BT.2100, no windows DWM conversion, rendering needs to be in the Display color space: <see cref="ColorSpaceType.RgbFullG2084NoneP2020"/> with <see cref="PixelFormat.R10G10B10A2_UNorm"/> <br />
+        /// </summary>
+        /// <param name="colorSpace"></param>
+        /// <param name="format"></param>
+        public void SetOutputColorSpace(ColorSpaceType colorSpace, PixelFormat format)
+        {
+            GraphicsDevice.Begin();
+
+            Description.BackBufferFormat = NormalizeBackBufferFormat(format);
+ 
+            // new resources
+            ResizeBackBuffer(Description.BackBufferWidth, Description.BackBufferHeight, format);
+            ResizeDepthStencilBuffer(Description.BackBufferWidth, Description.BackBufferHeight, depthStencilBuffer.ViewFormat);
+
+            // recreate swapchain
+            OnDestroyed();
+            Description.OutputColorSpace = colorSpace;
+            OnRecreated();
+
+            GraphicsDevice.End();
+        }
+
+        private PixelFormat NormalizeBackBufferFormat(PixelFormat backBufferFormat)
+        {
+            // If we are creating a GraphicsPresenter with 
+            if (GraphicsDevice.Features.HasSRgb && GraphicsDevice.ColorSpace == ColorSpace.Linear)
+            {
+                // If the device support SRgb and ColorSpace is linear, we use automatically a SRgb backbuffer
+                return backBufferFormat.ToSRgb();
+            }
+            else
+            {
+                // If the device does not support SRgb or the ColorSpace is Gamma, but the backbuffer format asked is SRgb, convert it to non SRgb
+                return backBufferFormat.ToNonSRgb();
+            }
         }
 
         protected abstract void ResizeBackBuffer(int width, int height, PixelFormat format);

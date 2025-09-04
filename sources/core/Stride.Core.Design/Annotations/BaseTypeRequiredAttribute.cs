@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 /* MIT License
@@ -23,33 +23,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-using System;
+namespace Stride.Core.Annotations;
 
-namespace Stride.Core.Annotations
+/// <summary>
+/// When applied to a target attribute, specifies a requirement for any type marked
+/// with the target attribute to implement or inherit specific type or types.
+/// </summary>
+/// <example>
+/// <code>
+/// [BaseTypeRequired(typeof(IComponent)] // Specify requirement
+/// class ComponentAttribute : Attribute { }
+/// 
+/// [Component] // ComponentAttribute requires implementing IComponent interface
+/// class MyComponent : IComponent { }
+/// </code>
+/// </example>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+[BaseTypeRequired(typeof(Attribute))]
+public sealed class BaseTypeRequiredAttribute : Attribute
 {
-    /// <summary>
-    /// When applied to a target attribute, specifies a requirement for any type marked
-    /// with the target attribute to implement or inherit specific type or types.
-    /// </summary>
-    /// <example>
-    /// <code>
-    /// [BaseTypeRequired(typeof(IComponent)] // Specify requirement
-    /// class ComponentAttribute : Attribute { }
-    /// 
-    /// [Component] // ComponentAttribute requires implementing IComponent interface
-    /// class MyComponent : IComponent { }
-    /// </code>
-    /// </example>
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-    [BaseTypeRequired(typeof(Attribute))]
-    public sealed class BaseTypeRequiredAttribute : Attribute
+    public BaseTypeRequiredAttribute([NotNull] Type baseType)
     {
-        public BaseTypeRequiredAttribute([NotNull] Type baseType)
-        {
-            BaseType = baseType;
-        }
-
-        [NotNull]
-        public Type BaseType { get; private set; }
+        BaseType = baseType;
     }
+
+    [NotNull]
+    public Type BaseType { get; }
 }

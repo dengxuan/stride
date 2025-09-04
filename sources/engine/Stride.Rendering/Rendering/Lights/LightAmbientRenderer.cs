@@ -1,7 +1,8 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
+using System.Collections.Generic;
 using Stride.Core.Collections;
 using Stride.Core.Mathematics;
 using Stride.Engine;
@@ -31,7 +32,7 @@ namespace Stride.Rendering.Lights
             lightShaderGroup.Reset();
         }
 
-        public override void SetViews(FastList<RenderView> views)
+        public override void SetViews(List<RenderView> views)
         {
             base.SetViews(views);
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2015 SharpYaml - Alexandre Mutel
+// Copyright (c) 2015 SharpYaml - Alexandre Mutel
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -141,12 +141,16 @@ namespace Stride.Core.Yaml.Serialization.Serializers
 
             if (!collectionDescriptor.HasAdd)
             {
-                throw new InvalidOperationException($"Cannot deserialize list to type [{thisObject.GetType()}]. No Add method found");
+                throw new InvalidOperationException($"Cannot deserialize collection to type [{thisObject.GetType()}]. No Add method found");
             }
             if (collectionDescriptor.IsReadOnly(thisObject))
             {
-                throw new InvalidOperationException($"Cannot deserialize list to readonly collection type [{thisObject.GetType()}].");
+                throw new InvalidOperationException($"Cannot deserialize collection to readonly collection type [{thisObject.GetType()}].");
             }
+
+            // The collection may contain some initial data from its containing instance's ctor,
+            // let's replace the existing data with the data we have serialized
+            collectionDescriptor.Clear(thisObject);
 
             var reader = objectContext.Reader;
 

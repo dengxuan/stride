@@ -1,4 +1,4 @@
-﻿// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+﻿// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core.Assets.Editor.Components.Properties;
@@ -25,13 +25,16 @@ namespace Stride.Core.Assets.Editor.Quantum.NodePresenters
             this.isOverridden = isOverridden;
         }
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            base.Dispose();
-            if (AssociatedNode.Node != null)
+            base.Dispose(disposing);
+            if (disposing)
             {
-                ((IAssetNode)AssociatedNode.Node).OverrideChanging -= OnOverrideChanging;
-                ((IAssetNode)AssociatedNode.Node).OverrideChanged -= OnOverrideChanged;
+                if (AssociatedNode.Node != null)
+                {
+                    ((IAssetNode)AssociatedNode.Node).OverrideChanging -= OnOverrideChanging;
+                    ((IAssetNode)AssociatedNode.Node).OverrideChanged -= OnOverrideChanged;
+                }
             }
         }
 

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -115,7 +115,22 @@ namespace Stride.Shaders.Compiler.OpenGL
                 File.WriteAllBytes(inputFileName, Encoding.ASCII.GetBytes(shader));
 
                 // Run shader compiler
-                var filename = Platform.Type == PlatformType.Windows ? "glslangValidator.exe" : "glslangValidator";
+                string filename;
+                switch (Platform.Type)
+                {
+                    case PlatformType.Windows:
+                    case PlatformType.UWP:
+                        filename = @"win-x64\glslangValidator.exe";
+                        break;
+                    case PlatformType.Linux:
+                        filename = @"linux-x64/glslangValidator.bin";
+                        break;
+                    case PlatformType.macOS:
+                        filename = @"osx-x64/glslangValidator.bin";
+                        break;
+                    default:
+                        throw new PlatformNotSupportedException();
+                }
                 ShellHelper.RunProcessAndRedirectToLogger(filename, $"-V -o {outputFileName} {inputFileName}", null, shaderBytecodeResult);
 
                 if (!File.Exists(outputFileName))
@@ -134,7 +149,8 @@ namespace Stride.Shaders.Compiler.OpenGL
 
                 using (var stream = new MemoryStream())
                 {
-                    BinarySerialization.Write(stream, shaderBytecodes);
+                    var writer = new BinarySerializationWriter(stream);
+                    writer.Write(shaderBytecodes);
                     rawData = stream.ToArray();
                 }
 
@@ -255,8 +271,8 @@ namespace Stride.Shaders.Compiler.OpenGL
                         || variable.Type.Name.Text.Contains("samplerBuffer"))
                     {
                         // TODO: Make more robust
-                        var textureBindingIndex = reflection.ResourceBindings.IndexOf(x => variable.Name.ToString().StartsWith(x.RawName));
-                        var samplerBindingIndex = reflection.ResourceBindings.IndexOf(x => variable.Name.ToString().EndsWith(x.RawName));
+                        var textureBindingIndex = reflection.ResourceBindings.IndexOf(x => variable.Name.ToString().StartsWith(x.RawName, StringComparison.Ordinal));
+                        var samplerBindingIndex = reflection.ResourceBindings.IndexOf(x => variable.Name.ToString().EndsWith(x.RawName, StringComparison.Ordinal));
 
                         if (textureBindingIndex != -1)
                             MarkResourceBindingAsUsed(reflection, textureBindingIndex, stage);
@@ -279,6 +295,9 @@ namespace Stride.Shaders.Compiler.OpenGL
                     // Register "NoSampler", required by HLSL=>GLSL translation to support HLSL such as texture.Load().
                     var noSampler = new EffectResourceBindingDescription { KeyInfo = { KeyName = "NoSampler" }, RawName = "NoSampler", Class = EffectParameterClass.Sampler, SlotStart = -1, SlotCount = 1 };
                     reflection.ResourceBindings.Add(noSampler);
+
+                    // Make sure it's a point sampler as some texture formats do not support linear sampling which will result in validation errors.
+                    reflection.SamplerStates.Add(new EffectSamplerStateBinding("NoSampler", new SamplerStateDescription(TextureFilter.Point, TextureAddressMode.Clamp)));
 
                     // Defines the ordering of resource groups in Vulkan. This is mirrored in the PipelineState
                     var resourceGroups = reflection.ResourceBindings.Select(x => x.ResourceGroup ?? "Globals").Distinct().ToList();
@@ -313,7 +332,7 @@ namespace Stride.Shaders.Compiler.OpenGL
                     // Add layout(set, bindings) qualifier to all other uniforms
                     foreach (var variable in glslShader.Declarations.OfType<Variable>().Where(x => (x.Qualifiers.Contains(StorageQualifier.Uniform))))
                     {
-                        var layoutBindingIndex = bindings.IndexOf(x => variable.Name.Text.StartsWith(x.Key.RawName));
+                        var layoutBindingIndex = bindings.IndexOf(x => variable.Name.Text.StartsWith(x.Key.RawName, StringComparison.Ordinal));
 
                         if (layoutBindingIndex != -1)
                         {

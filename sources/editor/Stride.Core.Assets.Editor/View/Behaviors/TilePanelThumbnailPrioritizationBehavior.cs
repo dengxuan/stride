@@ -1,12 +1,10 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-
-using Stride.Core.Assets.Editor.Extensions;
 using Stride.Core.Assets.Editor.ViewModel;
 using Stride.Core.Extensions;
 using Stride.Core.Presentation.Behaviors;

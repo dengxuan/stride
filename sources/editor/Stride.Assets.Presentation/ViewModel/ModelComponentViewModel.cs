@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,13 +8,13 @@ using Stride.Core.Assets.Quantum;
 using Stride.Core.Extensions;
 using Stride.Core.Serialization;
 using Stride.Core.Presentation.Quantum.Presenters;
-using Stride.Core.Presentation.ViewModel;
 using Stride.Core.Quantum;
 using Stride.Assets.Models;
 using Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.ViewModels;
 using Stride.Core.Collections;
 using Stride.Engine;
 using Stride.Rendering;
+using Stride.Core.Presentation.ViewModels;
 
 namespace Stride.Assets.Presentation.ViewModel
 {

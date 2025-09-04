@@ -159,18 +159,18 @@ namespace Stride.Core.Yaml.Serialization
 
             // Prefix all tags by !
             tag = Uri.EscapeUriString(tag);
-            if (tag.StartsWith("tag:"))
+            if (tag.StartsWith("tag:", StringComparison.Ordinal))
             {
                 // shorten tag
                 // TODO this is not really failsafe
-                var shortTag = "!!" + tag.Substring(tag.LastIndexOf(':') + 1);
+                var shortTag = "!!" + tag[(tag.LastIndexOf(':') + 1)..];
 
                 // Auto register tag to schema
                 schema.RegisterTag(shortTag, tag);
                 tag = shortTag;
             }
 
-            tag = tag.StartsWith("!") ? tag : "!" + tag;
+            tag = tag.StartsWith('!') ? tag : "!" + tag;
 
             lock (lockCache)
             {
@@ -194,7 +194,7 @@ namespace Stride.Core.Yaml.Serialization
             // Get the default schema type if there is any
             var shortTag = schema.ShortenTag(tag);
             Type type;
-            if (shortTag != tag || shortTag.StartsWith("!!"))
+            if (shortTag != tag || shortTag.StartsWith("!!", StringComparison.Ordinal))
             {
                 type = schema.GetTypeForDefaultTag(shortTag);
                 if (type != null)
@@ -217,7 +217,7 @@ namespace Stride.Core.Yaml.Serialization
                 }
 
                 // Else resolve type from assembly
-                var tagAsType = shortTag.StartsWith("!") ? shortTag.Substring(1) : shortTag;
+                var tagAsType = shortTag.StartsWith('!') ? shortTag[1..] : shortTag;
 
                 // Try to resolve the type from registered assemblies
                 type = ResolveType(tagAsType);
@@ -362,9 +362,9 @@ namespace Stride.Core.Yaml.Serialization
         /// <exception cref="InvalidOperationException">Unable to get an assembly qualified name for type.</exception>
         /// <example>
         ///     <list type="bullet">
-        ///         <item><c>typeof(string).GetShortAssemblyQualifiedName(); // System.String,mscorlib</c></item>
-        ///         <item><c>typeof(string[]).GetShortAssemblyQualifiedName(); // System.String[],mscorlib</c></item>
-        ///         <item><c>typeof(List&lt;string&gt;).GetShortAssemblyQualifiedName(); // System.Collection.Generics.List`1[[System.String,mscorlib]],mscorlib</c></item>
+        ///         <item><c>typeof(string).GetShortAssemblyQualifiedName(); // System.String,System.Private.CoreLib</c></item>
+        ///         <item><c>typeof(string[]).GetShortAssemblyQualifiedName(); // System.String[],System.Private.CoreLib</c></item>
+        ///         <item><c>typeof(List&lt;string&gt;).GetShortAssemblyQualifiedName(); // System.Collection.Generics.List`1[[System.String,System.Private.CoreLib]],System.Private.CoreLib</c></item>
         ///     </list>
         /// </example>
         private static string GetShortAssemblyQualifiedName(Type type)

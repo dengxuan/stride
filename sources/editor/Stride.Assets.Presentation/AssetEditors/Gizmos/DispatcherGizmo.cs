@@ -1,9 +1,11 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Stride.Core;
 using Stride.Engine;
+using Stride.Engine.Gizmos;
 
 namespace Stride.Assets.Presentation.AssetEditors.Gizmos
 {
@@ -63,9 +65,10 @@ namespace Stride.Assets.Presentation.AssetEditors.Gizmos
             }
         }
 
-        public override bool IsUnderMouse(int pickedComponentId)
+        public override bool HandlesComponentId(OpaqueComponentId pickedComponentId, [MaybeNullWhen(false)] out Entity selection)
         {
-            return currentGizmo != null && currentGizmo.IsUnderMouse(pickedComponentId);
+            selection = null;
+            return currentGizmo != null && currentGizmo.HandlesComponentId(pickedComponentId, out selection);
         }
 
         public override void Update()
@@ -94,7 +97,6 @@ namespace Stride.Assets.Presentation.AssetEditors.Gizmos
                 }
 
                 // Initialize the new gizmo
-                currentGizmo?.InitializeContentEntity(ContentEntity);
                 currentGizmo?.Initialize(Services, EditorScene);
 
                 // Set the selected and enabled state of the gizmo

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2012 SharpDX - Alexandre Mutel
@@ -179,10 +179,8 @@ namespace Stride.Graphics
         /// <returns>True if the <see cref="PixelFormat"/> is valid.</returns>
         public static bool IsValid(this PixelFormat format)
         {
-            return ((int)(format) >= 1 && (int)(format) <= 115) // DirectX formats
-                || ((int)(format) >= 1024 && (int)(format) <= 1033) // PVRTC formats
-                || ((int)(format) >= 1088 && (int)(format) <= 1097) // ETC formats
-                || ((int)(format) >= 1120 && (int)(format) <= 1122); // ATITC formats
+            return ((int)format >= 1 && (int)format <= 115) // DirectX formats
+                || ((int)format >= 1088 && (int)format <= 1097); // ETC formats
         }
 
         /// <summary>

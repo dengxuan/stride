@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.ComponentModel;
@@ -108,6 +108,15 @@ namespace Stride.UI.Controls
                 OnAspectImageInvalidated();
             }
         }
+
+        /// <summary>
+        /// Gets or set the color used to tint the image. Default value is White.
+        /// </summary>
+        /// <remarks>The initial image color is multiplied by this color.</remarks>
+        /// <userdoc>The color used to tint the image. The default value is white.</userdoc>
+        [DataMember]
+        [Display(category: AppearanceCategory)]
+        public Color Color { get; set; } = Color.White;
 
         /// <summary>
         /// Gets or sets a value that describes how the button image should be stretched to fill the destination rectangle.

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -17,11 +17,11 @@ using Stride.Core.Presentation.Services;
 using Stride.Graphics;
 using Stride.Core.Presentation.ValueConverters;
 using Stride.Core.Presentation.View;
-using Stride.Core.Presentation.ViewModel;
 using Stride.Core.Translation;
 using Stride.Assets.Templates;
 using MessageBoxButton = Stride.Core.Presentation.Services.MessageBoxButton;
 using MessageBoxImage = Stride.Core.Presentation.Services.MessageBoxImage;
+using Stride.Core.Presentation.ViewModels;
 
 namespace Stride.Assets.Presentation.Templates
 {
@@ -87,19 +87,19 @@ namespace Stride.Assets.Presentation.Templates
         {
             if (Orientation == DisplayOrientation.Default)
             {
-                await services.Get<IDialogService>().MessageBox(Tr._p("Message", "Select an orientation."), MessageBoxButton.OK, MessageBoxImage.Information);
+                await services.Get<IDialogService>().MessageBoxAsync(Tr._p("Message", "Select an orientation."), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             if (!SelectedPlatforms.Any())
             {
-                await services.Get<IDialogService>().MessageBox(Tr._p("Message", "Select at least one platform."), MessageBoxButton.OK, MessageBoxImage.Information);
+                await services.Get<IDialogService>().MessageBoxAsync(Tr._p("Message", "Select at least one platform."), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
             string error;
             if (!NamingHelper.IsValidNamespace(Namespace, out error))
             {
-                await services.Get<IDialogService>().MessageBox(string.Format(Tr._p("Message", "Type a valid namespace name. Error with {0}"), error), MessageBoxButton.OK, MessageBoxImage.Information);
+                await services.Get<IDialogService>().MessageBoxAsync(string.Format(Tr._p("Message", "Type a valid namespace name. Error with {0}"), error), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 

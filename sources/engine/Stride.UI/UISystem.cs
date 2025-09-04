@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -14,7 +14,7 @@ namespace Stride.UI
     /// <summary>
     /// Interface of the UI system.
     /// </summary>
-    public class UISystem : GameSystemBase
+    public class UISystem : GameSystemBase, IService
     {
         internal UIBatch Batch { get; private set; }
 
@@ -29,6 +29,8 @@ namespace Stride.UI
         public UISystem(IServiceRegistry registry)
             : base(registry)
         {
+            var gameSystems = registry.GetService<IGameSystemCollection>();
+            gameSystems?.Add(this);
         }
 
         public override void Initialize()
@@ -166,5 +168,7 @@ namespace Stride.UI
                 UIElement.FocusedElement?.RaiseKeyDownEvent(new KeyEventArgs { Key = key, Input = input });
             }
         }
+
+        public static IService NewInstance(IServiceRegistry services) => new UISystem(services);
     }
 }

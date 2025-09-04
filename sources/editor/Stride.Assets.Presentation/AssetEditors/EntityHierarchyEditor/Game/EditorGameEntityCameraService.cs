@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -29,6 +29,7 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.Game
             public bool isOrbiting;
             public bool isShiftDown;
         };
+        private const float panningSpeedModifier = 0.033f;
 
         private readonly EntityHierarchyEditorViewModel editor;
         private float revolutionRadius;
@@ -55,10 +56,10 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.Game
         public override void ResetCamera(Vector3 viewDirection)
         {
             var isViewVertical = MathUtil.NearEqual(viewDirection.X, 0) && MathUtil.NearEqual(viewDirection.Z, 0);
-            SetCurrentYaw(isViewVertical ? 0 : (float)Math.Atan2(-viewDirection.X, -viewDirection.Z));
+            SetCurrentYaw(isViewVertical ? 0 : MathF.Atan2(-viewDirection.X, -viewDirection.Z));
 
             var horizontalViewDirection = new Vector2(viewDirection.X, viewDirection.Z);
-            SetCurrentPitch((float)Math.Atan2(viewDirection.Y, horizontalViewDirection.Length()));
+            SetCurrentPitch(MathF.Atan2(viewDirection.Y, horizontalViewDirection.Length()));
         }
 
         /// <summary>
@@ -82,7 +83,7 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.Game
             }
             else
             {
-                distance = 3*(Math.Abs(sphere.Radius) > MathUtil.ZeroTolerance ? sphere.Radius : 0.5f * SceneUnit);
+                distance = 3*(MathF.Abs(sphere.Radius) > MathUtil.ZeroTolerance ? sphere.Radius : 0.5f * SceneUnit);
             }
 
             SetCurrentPosition(targetPos - direction*distance);
@@ -107,32 +108,14 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.Game
             base.UpdateCamera();
 
             // Movement speed control
-            if (Game.Input.IsKeyPressed(Keys.OemPlus) || Game.Input.IsKeyPressed(Keys.Add))
+            if (Game.Input.IsKeyPressed(IncreaseCamSpeed.GetValue()) || Game.Input.IsKeyPressed(Keys.Add))
                 editor.Dispatcher.InvokeAsync(() => Camera.IncreaseMovementSpeed());
-            else if (Game.Input.IsKeyPressed(Keys.OemMinus) || Game.Input.IsKeyPressed(Keys.Subtract))
+            else if (Game.Input.IsKeyPressed(DecreaseCamSpeed.GetValue()) || Game.Input.IsKeyPressed(Keys.Subtract))
                 editor.Dispatcher.InvokeAsync(() => Camera.DecreaseMovementSpeed());
 
             var duplicating = Game.Input.IsKeyDown(Keys.LeftCtrl) || Game.Input.IsKeyDown(Keys.RightCtrl);
             if (duplicating)
                 return;
-
-            var isAnyMouseButtonDown = (Game.Input.IsMouseButtonDown(MouseButton.Left) || Game.Input.IsMouseButtonDown(MouseButton.Middle) || Game.Input.IsMouseButtonDown(MouseButton.Right));
-            var shouldControlMouse = IsMouseAvailable && isAnyMouseButtonDown;
-            if (shouldControlMouse != IsControllingMouse)
-            {
-                IsControllingMouse = shouldControlMouse;
-
-                if (IsControllingMouse)
-                {
-                    Game.Input.LockMousePosition();
-                    Game.IsMouseVisible = false;
-                }
-                else
-                {
-                    Game.Input.UnlockMousePosition();
-                    Game.IsMouseVisible = true;
-                }
-            }
 
             if (!IsMouseAvailable)
                 return;
@@ -155,6 +138,24 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.Game
             SetCurrentPosition(position);
             SetCurrentYaw(yaw);
             UpdateViewMatrix();
+
+            var isAnyMouseButtonDown = (Game.Input.IsMouseButtonDown(MouseButton.Left) || Game.Input.IsMouseButtonDown(MouseButton.Middle) || Game.Input.IsMouseButtonDown(MouseButton.Right));
+            var shouldControlMouse = IsMouseAvailable && isAnyMouseButtonDown && (input.isMoving || input.isPanning || input.isRotating || input.isOrbiting || input.isZooming);
+            if (shouldControlMouse != IsControllingMouse)
+            {
+                IsControllingMouse = shouldControlMouse;
+
+                if (IsControllingMouse)
+                {
+                    Game.Input.LockMousePosition();
+                    Game.IsMouseVisible = false;
+                }
+                else
+                {
+                    Game.Input.UnlockMousePosition();
+                    Game.IsMouseVisible = true;
+                }
+            }
         }
 
         private Input GetInput()
@@ -167,10 +168,10 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.Game
             bool isAltDown = Game.Input.IsKeyDown(Keys.LeftAlt) || Game.Input.IsKeyDown(Keys.RightAlt);
             input.isShiftDown = Game.Input.IsKeyDown(Keys.LeftShift) || Game.Input.IsKeyDown(Keys.RightShift);
 
-            input.isPanning = !isAltDown && mbDown && !rbDown;
+            input.isPanning = mbDown && !rbDown;
             input.isRotating = !isAltDown && !mbDown && rbDown;
             input.isMoving = !isAltDown && mbDown && rbDown;
-            input.isZooming = (isAltDown && !lbDown && !mbDown && rbDown) || (Math.Abs(Game.Input.MouseWheelDelta) > MathUtil.ZeroTolerance);
+            input.isZooming = (isAltDown && !lbDown && !mbDown && rbDown) || (MathF.Abs(Game.Input.MouseWheelDelta) > MathUtil.ZeroTolerance);
             input.isOrbiting = isAltDown && lbDown && !mbDown && !rbDown;
 
             return input;
@@ -240,6 +241,19 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.Game
                     z = 0f;
                 }
 
+                // Dynamically change MovementSpeed of Camera by using MouseWheel while moving around
+                if (input.isRotating)
+                {
+                    if (Game.Input.MouseWheelDelta > 0.0f)
+                    {
+                        editor.Dispatcher.InvokeAsync(() => Camera.IncreaseMovementSpeed());
+                    }
+                    if (Game.Input.MouseWheelDelta < 0.0f)
+                    {
+                        editor.Dispatcher.InvokeAsync(() => Camera.DecreaseMovementSpeed());
+                    }
+                }
+
                 var localDirection = Vector3.Normalize(new Vector3(x, y, -z));
                 position += Vector3.Transform(localDirection, rotation) * baseSpeed * dt * 60f;
             }
@@ -248,7 +262,7 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.Game
             if (input.isPanning)
             {
                 float panningSpeed = asOrthographic ? Component.OrthographicSize : revolutionRadius;
-                panningSpeed *= MouseMoveSpeedFactor * baseSpeed;
+                panningSpeed *= MouseMoveSpeedFactor * baseSpeed * panningSpeedModifier;
                 if (InvertPanningAxis.GetValue())
                     panningSpeed = -panningSpeed;
 
@@ -272,7 +286,7 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.Game
             }
 
             // Forward/backward
-            if (input.isZooming)
+            if (!input.isRotating && input.isZooming)
             {
                 if (asOrthographic)
                 {

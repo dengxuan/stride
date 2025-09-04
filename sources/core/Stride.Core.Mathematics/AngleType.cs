@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // -----------------------------------------------------------------------------
@@ -26,31 +26,31 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 */
-namespace Stride.Core.Mathematics
+
+namespace Stride.Core.Mathematics;
+
+/// <summary>
+/// Describes the type of angle.
+/// </summary>
+public enum AngleType
 {
     /// <summary>
-    /// Describes the type of angle.
+    /// Specifies an angle measurement in revolutions.
     /// </summary>
-    public enum AngleType
-    {
-        /// <summary>
-        /// Specifies an angle measurement in revolutions.
-        /// </summary>
-        Revolution,
+    Revolution,
 
-        /// <summary>
-        /// Specifies an angle measurement in degrees.
-        /// </summary>
-        Degree,
+    /// <summary>
+    /// Specifies an angle measurement in degrees.
+    /// </summary>
+    Degree,
 
-        /// <summary>
-        /// Specifies an angle measurement in radians.
-        /// </summary>
-        Radian,
+    /// <summary>
+    /// Specifies an angle measurement in radians.
+    /// </summary>
+    Radian,
 
-        /// <summary>
-        /// Specifies an angle measurement in gradians.
-        /// </summary>
-        Gradian,
-    }
+    /// <summary>
+    /// Specifies an angle measurement in gradians.
+    /// </summary>
+    Gradian,
 }

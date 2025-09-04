@@ -1,16 +1,16 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #if STRIDE_GRAPHICS_API_VULKAN
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
 using Vortice.Vulkan;
 using static Vortice.Vulkan.Vulkan;
 
 using Stride.Core;
 using Stride.Core.Threading;
+using System.Text;
 
 namespace Stride.Graphics
 {
@@ -40,6 +40,7 @@ namespace Stride.Graphics
         private IntPtr nativeUploadBufferStart;
         private int nativeUploadBufferSize;
         private int nativeUploadBufferOffset;
+        private object nativeUploadBufferLock = new();
 
         private Queue<KeyValuePair<long, VkFence>> nativeFences = new Queue<KeyValuePair<long, VkFence>>();
         private long lastCompletedFence;
@@ -218,7 +219,11 @@ namespace Stride.Graphics
                 pWaitSemaphores = &presentSemaphoreCopy,
                 pWaitDstStageMask = &pipelineStageFlags,
             };
-            vkQueueSubmit(NativeCommandQueue, 1, &submitInfo, fence);
+
+            lock (QueueLock)
+            {
+                vkQueueSubmit(NativeCommandQueue, 1, &submitInfo, fence);
+            }
 
             presentSemaphore = VkSemaphore.Null;
             nativeResourceCollector.Release();
@@ -287,53 +292,38 @@ namespace Stride.Graphics
                 depthClamp = true,
             };
 
-            var extensionProperties = vkEnumerateDeviceExtensionProperties(NativePhysicalDevice);
-            var availableExtensionNames = new List<string>();
-            var desiredExtensionNames = new List<string>();
-
-            for (int index = 0; index < extensionProperties.Length; index++)
+            Span<VkUtf8String> supportedExtensionProperties = stackalloc VkUtf8String[]
             {
-                fixed (VkExtensionProperties* extensionPropertiesPtr = extensionProperties)
-                {
-                    var namePointer = new IntPtr(extensionPropertiesPtr[index].extensionName);
-                    var name = Marshal.PtrToStringAnsi(namePointer);
-                    availableExtensionNames.Add(name);
-                }
-            }
-
-            desiredExtensionNames.Add(KHRSwapchainExtensionName);
-            if (!availableExtensionNames.Contains(KHRSwapchainExtensionName))
-                throw new InvalidOperationException();
-
-            if (availableExtensionNames.Contains(EXTDebugMarkerExtensionName) && IsDebugMode)
+                VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
+            };
+            var availableExtensionProperties = GetAvailableExtensionProperties(supportedExtensionProperties);
+            ValidateExtensionPropertiesAvailability(availableExtensionProperties);
+            var desiredExtensionProperties = new HashSet<VkUtf8String>
             {
-                desiredExtensionNames.Add(EXTDebugMarkerExtensionName);
+                VK_KHR_SWAPCHAIN_EXTENSION_NAME
+            };
+
+            if (availableExtensionProperties.Contains(VK_EXT_DEBUG_MARKER_EXTENSION_NAME) && IsDebugMode)
+            {
+                desiredExtensionProperties.Add(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
                 IsProfilingSupported = true;
             }
 
-            var enabledExtensionNames = desiredExtensionNames.Select(Marshal.StringToHGlobalAnsi).ToArray();
-
-            try
+            using VkStringArray ppEnabledExtensionNames = new(desiredExtensionProperties);
+            var deviceCreateInfo = new VkDeviceCreateInfo
             {
-                var deviceCreateInfo = new VkDeviceCreateInfo
-                {
-                    sType = VkStructureType.DeviceCreateInfo,
-                    queueCreateInfoCount = 1,
-                    pQueueCreateInfos = &queueCreateInfo,
-                    enabledExtensionCount = (uint)enabledExtensionNames.Length,
-                    ppEnabledExtensionNames = enabledExtensionNames.Length > 0 ? (byte**)Core.Interop.Fixed(enabledExtensionNames) : null,
-                    pEnabledFeatures = &enabledFeature,
-                };
+                sType = VkStructureType.DeviceCreateInfo,
+                queueCreateInfoCount = 1,
+                pQueueCreateInfos = &queueCreateInfo,
+                enabledExtensionCount = ppEnabledExtensionNames.Length,
+                ppEnabledExtensionNames = ppEnabledExtensionNames,
+                pEnabledFeatures = &enabledFeature,
+            };
 
-                vkCreateDevice(NativePhysicalDevice, &deviceCreateInfo, null, out nativeDevice);
-            }
-            finally
-            {
-                foreach (var enabledExtensionName in enabledExtensionNames)
-                {
-                    Marshal.FreeHGlobal(enabledExtensionName);
-                }
-            }
+            vkCreateDevice(NativePhysicalDevice, in deviceCreateInfo, null, out nativeDevice);
+
+            vkLoadDevice(nativeDevice);
 
             vkGetDeviceQueue(nativeDevice, 0, 0, out NativeCommandQueue);
 
@@ -361,43 +351,74 @@ namespace Stride.Graphics
             EmptyTexture = Texture.New2D(this, 1, 1, PixelFormat.R8G8B8A8_UNorm_SRgb, TextureFlags.ShaderResource);
         }
 
-        internal unsafe IntPtr AllocateUploadBuffer(int size, out VkBuffer resource, out int offset)
+        private unsafe HashSet<VkUtf8String> GetAvailableExtensionProperties(Span<VkUtf8String> supportedExtensionProperties)
         {
-            // TODO D3D12 thread safety, should we simply use locks?
-            if (nativeUploadBuffer == VkBuffer.Null || nativeUploadBufferOffset + size > nativeUploadBufferSize)
+            var availableExtensionProperties = new HashSet<VkUtf8String>();
+            var extensionProperties = vkEnumerateDeviceExtensionProperties(NativePhysicalDevice);
+
+            for (int index = 0; index < extensionProperties.Length; index++)
             {
-                if (nativeUploadBuffer != VkBuffer.Null)
-                {
-                    vkUnmapMemory(NativeDevice, nativeUploadBufferMemory);
-                    Collect(nativeUploadBuffer);
-                    Collect(nativeUploadBufferMemory);
-                }
+                var properties = extensionProperties[index];
+                var name = new VkUtf8String(properties.extensionName);
+                var indexOfExtensionName = supportedExtensionProperties.IndexOf(name);
 
-                // Allocate new buffer
-                // TODO D3D12 recycle old ones (using fences to know when GPU is done with them)
-                // TODO D3D12 ResourceStates.CopySource not working?
-                nativeUploadBufferSize = Math.Max(4 * 1024 * 1024, size);
-
-                var bufferCreateInfo = new VkBufferCreateInfo
-                {
-                    sType = VkStructureType.BufferCreateInfo,
-                    size = (ulong)nativeUploadBufferSize,
-                    flags = VkBufferCreateFlags.None,
-                    usage = VkBufferUsageFlags.TransferSrc,
-                };
-                vkCreateBuffer(NativeDevice, &bufferCreateInfo, null, out nativeUploadBuffer);
-                AllocateMemory(VkMemoryPropertyFlags.HostVisible | VkMemoryPropertyFlags.HostCoherent);
-
-                fixed (IntPtr* nativeUploadBufferStartPtr = &nativeUploadBufferStart)
-                    vkMapMemory(NativeDevice, nativeUploadBufferMemory, 0, (ulong)nativeUploadBufferSize, VkMemoryMapFlags.None, (void**)nativeUploadBufferStartPtr);
-                nativeUploadBufferOffset = 0;
+                if (indexOfExtensionName >= 0)
+                    availableExtensionProperties.Add(supportedExtensionProperties[indexOfExtensionName]);
             }
 
-            // Bump allocate
-            resource = nativeUploadBuffer;
-            offset = nativeUploadBufferOffset;
-            nativeUploadBufferOffset += size;
-            return nativeUploadBufferStart + offset;
+            return availableExtensionProperties;
+        }
+
+        private static void ValidateExtensionPropertiesAvailability(HashSet<VkUtf8String> availableExtensionProperties)
+        {
+            if (!availableExtensionProperties.Contains(VK_KHR_SWAPCHAIN_EXTENSION_NAME))
+            {
+                string extensionName = Encoding.UTF8.GetString(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+                throw new NotSupportedException($"Required Vulkan extension {extensionName} is not supported by the current physical device.");
+            }
+        }
+
+        internal unsafe IntPtr AllocateUploadBuffer(int size, out VkBuffer resource, out int offset)
+        {
+            lock (nativeUploadBufferLock)
+            {
+                if (nativeUploadBuffer == VkBuffer.Null || nativeUploadBufferOffset + size > nativeUploadBufferSize)
+                {
+                    if (nativeUploadBuffer != VkBuffer.Null)
+                    {
+                        vkUnmapMemory(NativeDevice, nativeUploadBufferMemory);
+                        Collect(nativeUploadBuffer);
+                        Collect(nativeUploadBufferMemory);
+                    }
+
+                    // Allocate new buffer
+                    // TODO D3D12 recycle old ones (using fences to know when GPU is done with them)
+                    // TODO D3D12 ResourceStates.CopySource not working?
+                    nativeUploadBufferSize = Math.Max(4 * 1024 * 1024, size);
+
+                    var bufferCreateInfo = new VkBufferCreateInfo
+                    {
+                        sType = VkStructureType.BufferCreateInfo,
+                        size = (ulong)nativeUploadBufferSize,
+                        flags = VkBufferCreateFlags.None,
+                        usage = VkBufferUsageFlags.TransferSrc,
+                    };
+                    vkCreateBuffer(NativeDevice, &bufferCreateInfo, null, out nativeUploadBuffer);
+                    AllocateMemory(VkMemoryPropertyFlags.HostVisible | VkMemoryPropertyFlags.HostCoherent);
+
+                    fixed (IntPtr* nativeUploadBufferStartPtr = &nativeUploadBufferStart)
+                        vkMapMemory(NativeDevice, nativeUploadBufferMemory, 0, (ulong)nativeUploadBufferSize, VkMemoryMapFlags.None, (void**)nativeUploadBufferStartPtr);
+                    nativeUploadBufferOffset = 0;
+                }
+
+                // Bump allocate
+                resource = nativeUploadBuffer;
+                offset = nativeUploadBufferOffset;
+                nativeUploadBufferOffset += size;
+
+                return nativeUploadBufferStart + offset;
+            }
         }
 
         protected unsafe void AllocateMemory(VkMemoryPropertyFlags memoryProperties)
@@ -420,7 +441,7 @@ namespace Stride.Graphics
                 if ((typeBits & 1) == 1)
                 {
                     // Type is available, does it match user properties?
-                    var memoryType = *(&physicalDeviceMemoryProperties.memoryTypes_0 + i);
+                    var memoryType = *(&physicalDeviceMemoryProperties.memoryTypes[0] + i);
                     if ((memoryType.propertyFlags & memoryProperties) == memoryProperties)
                     {
                         allocateInfo.memoryTypeIndex = i;
@@ -430,9 +451,7 @@ namespace Stride.Graphics
                 typeBits >>= 1;
             }
 
-            fixed (VkDeviceMemory* nativeUploadBufferMemoryPtr = &nativeUploadBufferMemory)
-                vkAllocateMemory(NativeDevice, &allocateInfo, null, nativeUploadBufferMemoryPtr);
-
+            vkAllocateMemory(NativeDevice, &allocateInfo, null, out nativeUploadBufferMemory);
             vkBindBufferMemory(NativeDevice, nativeUploadBuffer, nativeUploadBufferMemory, 0);
         }
 
@@ -522,7 +541,11 @@ namespace Stride.Graphics
                 pWaitSemaphores = &presentSemaphoreCopy,
                 pWaitDstStageMask = &pipelineStageFlags,
             };
-            vkQueueSubmit(NativeCommandQueue, 1, &submitInfo, fence);
+
+            lock (QueueLock)
+            {
+                vkQueueSubmit(NativeCommandQueue, 1, &submitInfo, fence);
+            }
 
             presentSemaphore = VkSemaphore.Null;
             nativeResourceCollector.Release();
@@ -773,15 +796,17 @@ namespace Stride.Graphics
                 .Where(size => size.descriptorCount > 0)
                 .ToArray();
 
-            var descriptorPoolCreateInfo = new VkDescriptorPoolCreateInfo
-            {
-                sType = VkStructureType.DescriptorPoolCreateInfo,
-                poolSizeCount = (uint)poolSizes.Length,
-                pPoolSizes = (VkDescriptorPoolSize*)Core.Interop.Fixed(poolSizes),
-                maxSets = GraphicsDevice.MaxDescriptorSetCount,
-            };
-            vkCreateDescriptorPool(GraphicsDevice.NativeDevice, &descriptorPoolCreateInfo, null, out var descriptorPool);
-            return descriptorPool;
+            fixed (VkDescriptorPoolSize* fPoolSizes = poolSizes) { // null if array is empty or null
+                var descriptorPoolCreateInfo = new VkDescriptorPoolCreateInfo
+                {
+                    sType = VkStructureType.DescriptorPoolCreateInfo,
+                    poolSizeCount = (uint)poolSizes.Length,
+                    pPoolSizes = fPoolSizes,
+                    maxSets = GraphicsDevice.MaxDescriptorSetCount,
+                };
+                vkCreateDescriptorPool(GraphicsDevice.NativeDevice, &descriptorPoolCreateInfo, null, out var descriptorPool);
+                return descriptorPool;
+            }
         }
 
         protected override void ResetObject(VkDescriptorPool obj)
@@ -809,52 +834,52 @@ namespace Stride.Graphics
 
         public static unsafe implicit operator NativeResource(VkBuffer handle)
         {
-            return new NativeResource(VkDebugReportObjectTypeEXT.BufferEXT, *(ulong*)&handle);
+            return new NativeResource(VkDebugReportObjectTypeEXT.Buffer, *(ulong*)&handle);
         }
 
         public static unsafe implicit operator NativeResource(VkBufferView handle)
         {
-            return new NativeResource(VkDebugReportObjectTypeEXT.BufferViewEXT, *(ulong*)&handle);
+            return new NativeResource(VkDebugReportObjectTypeEXT.BufferView, *(ulong*)&handle);
         }
 
         public static unsafe implicit operator NativeResource(VkImage handle)
         {
-            return new NativeResource(VkDebugReportObjectTypeEXT.ImageEXT, *(ulong*)&handle);
+            return new NativeResource(VkDebugReportObjectTypeEXT.Image, *(ulong*)&handle);
         }
 
         public static unsafe implicit operator NativeResource(VkImageView handle)
         {
-            return new NativeResource(VkDebugReportObjectTypeEXT.ImageViewEXT, *(ulong*)&handle);
+            return new NativeResource(VkDebugReportObjectTypeEXT.ImageView, *(ulong*)&handle);
         }
 
         public static unsafe implicit operator NativeResource(VkDeviceMemory handle)
         {
-            return new NativeResource(VkDebugReportObjectTypeEXT.DeviceMemoryEXT, *(ulong*)&handle);
+            return new NativeResource(VkDebugReportObjectTypeEXT.DeviceMemory, *(ulong*)&handle);
         }
 
         public static unsafe implicit operator NativeResource(VkSampler handle)
         {
-            return new NativeResource(VkDebugReportObjectTypeEXT.SamplerEXT, *(ulong*)&handle);
+            return new NativeResource(VkDebugReportObjectTypeEXT.Sampler, *(ulong*)&handle);
         }
 
         public static unsafe implicit operator NativeResource(VkFramebuffer handle)
         {
-            return new NativeResource(VkDebugReportObjectTypeEXT.FramebufferEXT, *(ulong*)&handle);
+            return new NativeResource(VkDebugReportObjectTypeEXT.Framebuffer, *(ulong*)&handle);
         }
 
         public static unsafe implicit operator NativeResource(VkSemaphore handle)
         {
-            return new NativeResource(VkDebugReportObjectTypeEXT.SemaphoreEXT, *(ulong*)&handle);
+            return new NativeResource(VkDebugReportObjectTypeEXT.Semaphore, *(ulong*)&handle);
         }
 
         public static unsafe implicit operator NativeResource(VkFence handle)
         {
-            return new NativeResource(VkDebugReportObjectTypeEXT.FenceEXT, *(ulong*)&handle);
+            return new NativeResource(VkDebugReportObjectTypeEXT.Fence, *(ulong*)&handle);
         }
 
         public static unsafe implicit operator NativeResource(VkQueryPool handle)
         {
-            return new NativeResource(VkDebugReportObjectTypeEXT.QueryPoolEXT, *(ulong*)&handle);
+            return new NativeResource(VkDebugReportObjectTypeEXT.QueryPool, *(ulong*)&handle);
         }
 
         public unsafe void Destroy(GraphicsDevice device)
@@ -863,34 +888,34 @@ namespace Stride.Graphics
 
             switch (type)
             {
-                case VkDebugReportObjectTypeEXT.BufferEXT:
+                case VkDebugReportObjectTypeEXT.Buffer:
                     vkDestroyBuffer(device.NativeDevice, *(VkBuffer*)&handleCopy, null);
                     break;
-                case VkDebugReportObjectTypeEXT.BufferViewEXT:
+                case VkDebugReportObjectTypeEXT.BufferView:
                     vkDestroyBufferView(device.NativeDevice, *(VkBufferView*)&handleCopy, null);
                     break;
-                case VkDebugReportObjectTypeEXT.ImageEXT:
+                case VkDebugReportObjectTypeEXT.Image:
                     vkDestroyImage(device.NativeDevice, *(VkImage*)&handleCopy, null);
                     break;
-                case VkDebugReportObjectTypeEXT.ImageViewEXT:
+                case VkDebugReportObjectTypeEXT.ImageView:
                     vkDestroyImageView(device.NativeDevice, *(VkImageView*)&handleCopy, null);
                     break;
-                case VkDebugReportObjectTypeEXT.DeviceMemoryEXT:
+                case VkDebugReportObjectTypeEXT.DeviceMemory:
                     vkFreeMemory(device.NativeDevice, *(VkDeviceMemory*)&handleCopy, null);
                     break;
-                case VkDebugReportObjectTypeEXT.SamplerEXT:
+                case VkDebugReportObjectTypeEXT.Sampler:
                     vkDestroySampler(device.NativeDevice, *(VkSampler*)&handleCopy, null);
                     break;
-                case VkDebugReportObjectTypeEXT.FramebufferEXT:
+                case VkDebugReportObjectTypeEXT.Framebuffer:
                     vkDestroyFramebuffer(device.NativeDevice, *(VkFramebuffer*)&handleCopy, null);
                     break;
-                case VkDebugReportObjectTypeEXT.SemaphoreEXT:
+                case VkDebugReportObjectTypeEXT.Semaphore:
                     vkDestroySemaphore(device.NativeDevice, *(VkSemaphore*)&handleCopy, null);
                     break;
-                case VkDebugReportObjectTypeEXT.FenceEXT:
+                case VkDebugReportObjectTypeEXT.Fence:
                     vkDestroyFence(device.NativeDevice, *(VkFence*)&handleCopy, null);
                     break;
-                case VkDebugReportObjectTypeEXT.QueryPoolEXT:
+                case VkDebugReportObjectTypeEXT.QueryPool:
                     vkDestroyQueryPool(device.NativeDevice, *(VkQueryPool*)&handleCopy, null);
                     break;
             }

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #pragma warning disable SA1402 // File may only contain a single type
 
@@ -218,9 +218,9 @@ namespace Stride.Engine
     /// </remarks>
     public abstract class EntityProcessor<TComponent, TData> : EntityProcessor where TData : class where TComponent : EntityComponent
     {
-        protected readonly Dictionary<TComponent, TData> ComponentDatas = new Dictionary<TComponent, TData>();
-        private readonly HashSet<Entity> reentrancyCheck = new HashSet<Entity>();
-        private readonly FastList<TypeInfo> checkRequiredTypes = new FastList<TypeInfo>();
+        protected readonly Dictionary<TComponent, TData> ComponentDatas = [];
+        private readonly HashSet<Entity> reentrancyCheck = [];
+        private readonly List<TypeInfo> checkRequiredTypes = [];
 
         protected EntityProcessor([NotNull] params Type[] requiredAdditionalTypes)
             : base(typeof(TComponent), requiredAdditionalTypes)
@@ -358,7 +358,7 @@ namespace Stride.Engine
                 var componentType = components[i].GetType().GetTypeInfo();
                 for (var j = checkRequiredTypes.Count - 1; j >= 0; j--)
                 {
-                    if (checkRequiredTypes.Items[j].IsAssignableFrom(componentType))
+                    if (checkRequiredTypes[j].IsAssignableFrom(componentType))
                     {
                         checkRequiredTypes.RemoveAt(j);
 

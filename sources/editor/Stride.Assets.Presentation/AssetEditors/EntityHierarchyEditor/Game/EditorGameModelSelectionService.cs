@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -31,7 +31,7 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.Game
         }
 
         /// <inheritdoc />
-        public override Task DisposeAsync()
+        public override ValueTask DisposeAsync()
         {
             EnsureNotDestroyed(nameof(EditorGameModelSelectionService));
 
@@ -131,7 +131,7 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.Game
                     {
                         var effectName = renderObject.ActiveRenderStages[index].EffectSelector.EffectName;
                         if (effectName == "StrideForwardShadingEffect"
-                            || effectName.StartsWith("StrideForwardShadingEffect."))
+                            || effectName.StartsWith("StrideForwardShadingEffect.", StringComparison.Ordinal))
                         {
                             effectName = effectName.Replace("StrideForwardShadingEffect", "StrideEditorForwardShadingEffect");
                             renderObject.ActiveRenderStages[index].EffectSelector = new EffectSelector(effectName);

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Globalization;
@@ -8,7 +8,7 @@ using System.Reflection;
 using System.Xml.Linq;
 using Mono.Options;
 using Stride.Core.Diagnostics;
-using Stride.Core.VisualStudio;
+using Stride.Core.Solutions;
 
 namespace Stride.FixProjectReferences
 {
@@ -24,7 +24,7 @@ namespace Stride.FixProjectReferences
 
             var p = new OptionSet
                 {
-                    "Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp) All Rights Reserved",
+                    "Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp) All Rights Reserved",
                     "Stride Fix Project References - Version: "
                     +
                     String.Format(
@@ -84,7 +84,7 @@ namespace Stride.FixProjectReferences
             foreach (var solutionProject in solution.Projects.ToArray())
             {
                 // Is it really a project?
-                if (!solutionProject.FullPath.EndsWith(".csproj") && !solutionProject.FullPath.EndsWith(".vcxproj"))
+                if (!solutionProject.FullPath.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase) && !solutionProject.FullPath.EndsWith(".vcxproj", StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 // Load XML project
@@ -92,8 +92,8 @@ namespace Stride.FixProjectReferences
                 var ns = doc.Root.Name.Namespace;
                 var allElements = doc.DescendantNodes().OfType<XElement>().ToList();
 
-                var hasOutputPath = allElements.Any(element => element.Name.LocalName == "OutputPath" || element.Name.LocalName == "StrideOutputPath");
-                var isTest = allElements.Any(element => element.Name.LocalName == "StrideOutputFolder" && element.Value.StartsWith("Tests"));
+                var hasOutputPath = allElements.Any(element => element.Name.LocalName is "OutputPath" or "StrideOutputPath");
+                var isTest = allElements.Any(element => element.Name.LocalName == "StrideOutputFolder" && element.Value.StartsWith("Tests", StringComparison.Ordinal));
                 if (!hasOutputPath && !isTest)
                 {
                     bool projectUpdated = false;
@@ -103,7 +103,7 @@ namespace Stride.FixProjectReferences
                     foreach (var referenceNode in allElements.Where(element => element.Name.LocalName == "ProjectReference"))
                     {
                         var attr = referenceNode.Attribute("Include");
-                        if (attr != null && (attr.Value.EndsWith(".csproj") || attr.Value.EndsWith(".vcxproj")))
+                        if (attr != null && (attr.Value.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase) || attr.Value.EndsWith(".vcxproj", StringComparison.OrdinalIgnoreCase)))
                         {
                             var isPrivate = referenceNode.DescendantNodes().OfType<XElement>().FirstOrDefault(element => element.Name.LocalName == "Private");
                             bool referenceUpdated = false;

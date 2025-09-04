@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -44,7 +44,7 @@ namespace Stride.Debugger.Target
         private bool CanVisit(Type type)
         {
             // Also handles Entity, EntityComponent and Script
-            return AssetRegistry.IsContentType(type)
+            return AssetRegistry.IsExactContentType(type)
                    || type == typeof(Entity) || typeof(Entity).IsAssignableFrom(type) || typeof(EntityComponent).IsAssignableFrom(type);
         }
 

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -31,8 +31,8 @@ namespace Stride.Rendering.LightProbes
         // Computed data
         public Vector3[] Vertices;
         public int UserVertexCount;
-        public FastList<BowyerWatsonTetrahedralization.Tetrahedron> Tetrahedra;
-        public FastList<BowyerWatsonTetrahedralization.Face> Faces;
+        public List<BowyerWatsonTetrahedralization.Tetrahedron> Tetrahedra;
+        public List<BowyerWatsonTetrahedralization.Face> Faces;
 
         // Data to upload to GPU
         public Color3[] Coefficients;

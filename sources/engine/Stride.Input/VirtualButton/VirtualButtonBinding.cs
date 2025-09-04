@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 namespace Stride.Input
 {
@@ -44,6 +44,33 @@ namespace Stride.Input
         public virtual float GetValue(InputManager manager)
         {
             return Button != null ? Button.GetValue(manager) : 0.0f;
+        }
+
+        /// <summary>
+        /// Gets the pressed state for a particular binding.
+        /// </summary>
+        /// <returns><c>true</c> when pressed since the last frame; otherwise, <c>false</c>.</returns>
+        public virtual bool IsPressed(InputManager manager)
+        {
+            return Button != null ? Button.IsPressed(manager) : false;
+        }
+        
+        /// <summary>
+        /// Gets the held down state for a particular binding.
+        /// </summary>
+        /// <returns><c>true</c> when currently held down; otherwise, <c>false</c>.</returns>
+        public virtual bool IsDown(InputManager manager)
+        {
+            return Button != null ? Button.IsDown(manager) : false;
+        }
+        
+        /// <summary>
+        /// Gets the pressed state for a particular binding.
+        /// </summary>
+        /// <returns><c>true</c> when released since the last frame; otherwise, <c>false</c>.</returns>
+        public virtual bool IsReleased(InputManager manager)
+        {
+            return Button != null ? Button.IsReleased(manager) : false;
         }
 
         public override string ToString()

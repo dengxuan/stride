@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 #if STRIDE_PLATFORM_IOS
@@ -7,20 +7,19 @@ using System.Linq;
 using CoreLocation;
 using CoreMotion;
 using Stride.Core.Mathematics;
-using Stride.Games;
+using Window = Stride.Graphics.SDL.Window;
 
 namespace Stride.Input
 {
     /// <summary>
     /// Provides support for pointer/sensor input on iOS
     /// </summary>
-    internal class InputSourceiOS : InputSourceBase
+    internal class InputSourceiOS : InputSourceSDL
     {
         private CMMotionManager motionManager;
         private CLLocationManager locationManager;
         private bool locationManagerActivated;
         private float firstNorthValue = float.NegativeInfinity;
-        private PointeriOS pointer;
 
         private AccelerometerSensor accelerometerSensor;
         private UserAccelerationSensor userAccelerationSensor;
@@ -28,15 +27,14 @@ namespace Stride.Input
         private OrientationSensor orientationSensor;
         private GravitySensor gravitySensor;
         private CompassSensor compassSensor;
+
+        public InputSourceiOS(Window uiControl) : base(uiControl)
+        {
+        }
         
         public override void Initialize(InputManager inputManager)
         {
-            var context = inputManager.Game.Context as GameContextiOS;
-            var uiControl = context.Control;
-            var gameController = context.Control.GameViewController;
-
-            pointer = new PointeriOS(this, uiControl, gameController);
-            RegisterDevice(pointer);
+            base.Initialize(inputManager);
 
             // Create sensor managers
             motionManager = new CMMotionManager();

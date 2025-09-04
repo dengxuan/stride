@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Stride.Core;
@@ -65,21 +65,24 @@ namespace Stride.Rendering.Materials.ComputeColors
             var color = Value;
 
             // Convert from Vector4 to (Color4|Vector4|Color3|Vector3)
-            if (key is ValueParameterKey<Color4>)
+            bool threeDims = false;
+            if (key is ValueParameterKey<Color4> c4)
             {
-                context.Parameters.Set((ValueParameterKey<Color4>)key, (Color4)color);
+                context.Parameters.Set(c4, (Color4)color);
             }
-            else if (key is ValueParameterKey<Vector4>)
+            else if (key is ValueParameterKey<Vector4> v4)
             {
-                context.Parameters.Set((ValueParameterKey<Vector4>)key, color);
+                context.Parameters.Set(v4, color);
             }
-            else if (key is ValueParameterKey<Color3>)
+            else if (key is ValueParameterKey<Color3> c3)
             {
-                context.Parameters.Set((ValueParameterKey<Color3>)key, (Color3)(Vector3)color);
+                threeDims = true;
+                context.Parameters.Set(c3, (Color3)(Vector3)color);
             }
-            else if (key is ValueParameterKey<Vector3>)
+            else if (key is ValueParameterKey<Vector3> v3)
             {
-                context.Parameters.Set((ValueParameterKey<Vector3>)key, (Vector3)color);
+                threeDims = true;
+                context.Parameters.Set(v3, (Vector3)color);
             }
             else
             {
@@ -87,7 +90,7 @@ namespace Stride.Rendering.Materials.ComputeColors
             }
             UsedKey = key;
 
-            return new ShaderClassSource("ComputeColorConstantColorLink", key);
+            return new ShaderClassSource(threeDims ? "ComputeColorConstantColor3Link" : "ComputeColorConstantColorLink", key);
         }
     }
 }

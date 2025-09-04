@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -89,7 +89,7 @@ namespace Stride.Rendering
         public RenderSystem RenderSystem { get; set; }
 
         /// <summary>
-        /// The current visibility group from the <see cref="SceneInstance"/> and <see cref="RenderSystem"/>.
+        /// The current visibility group from the <see cref="Stride.Engine.SceneInstance"/> and <see cref="RenderSystem"/>.
         /// </summary>
         public VisibilityGroup VisibilityGroup { get; set; }
 
@@ -197,6 +197,7 @@ namespace Stride.Rendering
         public struct ViewportRestore : IDisposable
         {
             private readonly RenderContext context;
+
             private readonly ViewportState previousValue;
 
             public ViewportRestore(RenderContext context)

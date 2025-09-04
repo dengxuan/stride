@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -175,16 +175,12 @@ namespace Stride.Input
 
         private static void Register(VirtualButton virtualButton)
         {
-            if (!mapIp.ContainsKey(virtualButton.Id))
+            if (mapIp.TryAdd(virtualButton.Id, virtualButton))
             {
-                mapIp.Add(virtualButton.Id, virtualButton);
                 registered.Add(virtualButton);
             }
 
-            if (!mapName.ContainsKey(virtualButton.Name))
-            {
-                mapName.Add(virtualButton.Name, virtualButton);
-            }
+            mapName.TryAdd(virtualButton.Name, virtualButton);
         }
     }
 }

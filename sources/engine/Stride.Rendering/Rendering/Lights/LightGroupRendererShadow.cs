@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
@@ -69,8 +69,8 @@ namespace Stride.Rendering.Lights
     public abstract class LightGroupRendererShadow : LightGroupRendererDynamic
     {
         private readonly ShadowComparer shadowComparer = new ShadowComparer();
-        private readonly Dictionary<LightGroupKey, LightShaderGroupDynamic> lightShaderGroupPool = new Dictionary<LightGroupKey, LightShaderGroupDynamic>();
-        private readonly FastList<LightShaderGroupEntry<LightGroupKey>> lightShaderGroups = new FastList<LightShaderGroupEntry<LightGroupKey>>();
+        private readonly Dictionary<LightGroupKey, LightShaderGroupDynamic> lightShaderGroupPool = [];
+        private readonly List<LightShaderGroupEntry<LightGroupKey>> lightShaderGroups = [];
         private FastListStruct<LightDynamicEntry> processedLights = new FastListStruct<LightDynamicEntry>(8);
 
         public override Type[] LightTypes { get; }
@@ -87,7 +87,7 @@ namespace Stride.Rendering.Lights
             }
         }
 
-        public override void SetViews(FastList<RenderView> views)
+        public override void SetViews(List<RenderView> views)
         {
             base.SetViews(views);
 

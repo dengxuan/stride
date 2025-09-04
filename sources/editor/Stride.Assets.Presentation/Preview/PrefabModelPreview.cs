@@ -1,8 +1,8 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using Stride.Core.IO;
 using Stride.Assets.Models;
-using Stride.Assets.Presentation.Preview.Views;
+using Stride.Editor.Annotations;
 using Stride.Editor.Preview;
 using Stride.Engine;
 using Stride.Rendering;
@@ -12,7 +12,7 @@ namespace Stride.Assets.Presentation.Preview
     /// <summary>
     /// An implementation of the <see cref="AssetPreview"/> that can preview prefab models.
     /// </summary>
-    [AssetPreview(typeof(PrefabModelAsset), typeof(ModelPreviewView))]
+    [AssetPreview<PrefabModelAsset>]
     public class PrefabModelPreview : PreviewFromEntity<PrefabModelAsset>
     {
         /// <inheritdoc/>

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -444,7 +444,7 @@ namespace Stride.Shaders.Parser.Mixins
                     foreach (var variable in nextStreamUsage.OutStreamList)
                     {
                         var sem = ((Variable)variable).Qualifiers.OfType<Semantic>().FirstOrDefault();
-                        if (sem != null && (sem.Name.Text.StartsWith("SV_Target") || sem.Name.Text == "SV_Depth"))
+                        if (sem != null && (sem.Name.Text.StartsWith("SV_Target", StringComparison.Ordinal) || sem.Name.Text == "SV_Depth"))
                             semVar.Add(variable);
                         else
                             nonSemVar.Add(variable);

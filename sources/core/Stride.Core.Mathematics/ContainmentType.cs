@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // -----------------------------------------------------------------------------
@@ -26,26 +26,26 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 */
-namespace Stride.Core.Mathematics
+
+namespace Stride.Core.Mathematics;
+
+/// <summary>
+/// Describes how one bounding volume contains another.
+/// </summary>
+public enum ContainmentType
 {
     /// <summary>
-    /// Describes how one bounding volume contains another.
+    /// The two bounding volumes don't intersect at all.
     /// </summary>
-    public enum ContainmentType
-    {
-        /// <summary>
-        /// The two bounding volumes don't intersect at all.
-        /// </summary>
-        Disjoint,
+    Disjoint,
 
-        /// <summary>
-        /// One bounding volume completely contains another.
-        /// </summary>
-        Contains,
+    /// <summary>
+    /// One bounding volume completely contains another.
+    /// </summary>
+    Contains,
 
-        /// <summary>
-        /// The two bounding volumes overlap.
-        /// </summary>
-        Intersects,
-    }
+    /// <summary>
+    /// The two bounding volumes overlap.
+    /// </summary>
+    Intersects,
 }

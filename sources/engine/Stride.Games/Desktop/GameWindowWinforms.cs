@@ -1,6 +1,6 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
-#if STRIDE_PLATFORM_WINDOWS_DESKTOP && (STRIDE_GRAPHICS_API_DIRECT3D || STRIDE_GRAPHICS_API_VULKAN) && (STRIDE_UI_WINFORMS || STRIDE_UI_WPF)
+#if (STRIDE_GRAPHICS_API_DIRECT3D || STRIDE_GRAPHICS_API_VULKAN) && (STRIDE_UI_WINFORMS || STRIDE_UI_WPF)
 using System;
 using System.Diagnostics;
 using System.Drawing;
@@ -157,6 +157,7 @@ namespace Stride.Games
                 //gameForm.AppDeactivated += OnDeactivated;
                 gameForm.UserResized += OnClientSizeChanged;
                 gameForm.FullscreenToggle += OnFullscreenToggle;
+                gameForm.DisableFullScreen += OnDisableFullScreen;
                 gameForm.FormClosing += OnClosing;
             }
             else
@@ -271,6 +272,22 @@ namespace Stride.Games
             }
         }
 
+        /// <inheritdoc />
+        public override double Opacity 
+        {
+            get
+            {
+                return form?.Opacity ?? 1.0d;
+            } 
+            set
+            {
+                if (form != null)
+                {
+                    form.Opacity = value;
+                }
+            }
+        }
+        
         public override Int2 Position
         {
             get

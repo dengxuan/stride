@@ -1,50 +1,60 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
-namespace Stride.Core.Reflection
+
+namespace Stride.Core.Reflection;
+
+/// <summary>
+/// A category used by <see cref="ITypeDescriptorBase"/>.
+/// </summary>
+public enum DescriptorCategory
 {
     /// <summary>
-    /// A category used by <see cref="ITypeDescriptorBase"/>.
+    /// A primitive.
     /// </summary>
-    public enum DescriptorCategory
-    {
-        /// <summary>
-        /// A primitive.
-        /// </summary>
-        Primitive,
+    Primitive,
 
-        /// <summary>
-        /// A collection.
-        /// </summary>
-        Collection,
+    /// <summary>
+    /// A collection.
+    /// </summary>
+    Collection,
 
-        /// <summary>
-        /// An array
-        /// </summary>
-        Array,
+    /// <summary>
+    /// An array
+    /// </summary>
+    Array,
 
-        /// <summary>
-        /// A dictionary
-        /// </summary>
-        Dictionary,
+    /// <summary>
+    /// A list
+    /// </summary>
+    List,
 
-        /// <summary>
-        /// An object
-        /// </summary>
-        Object,
+    /// <summary>
+    /// A dictionary
+    /// </summary>
+    Dictionary,
 
-        /// <summary>
-        /// An unsupported object. This will be treated the same as Object.
-        /// </summary>
-        NotSupportedObject,
+    /// <summary>
+    /// A set
+    /// </summary>
+    Set,
 
-        /// <summary>
-        /// A nullable value
-        /// </summary>
-        Nullable,
+    /// <summary>
+    /// An object
+    /// </summary>
+    Object,
 
-        /// <summary>
-        /// A custom descriptor.
-        /// </summary>
-        Custom
-    }
+    /// <summary>
+    /// An unsupported object. This will be treated the same as Object.
+    /// </summary>
+    NotSupportedObject,
+
+    /// <summary>
+    /// A nullable value
+    /// </summary>
+    Nullable,
+
+    /// <summary>
+    /// A custom descriptor.
+    /// </summary>
+    Custom
 }

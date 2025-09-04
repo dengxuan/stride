@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -16,8 +16,27 @@ namespace Stride.Input
     /// <summary>
     /// Manages collecting input from connected input device in the form of <see cref="IInputDevice"/> objects. Also provides some convenience functions for most commonly used devices
     /// </summary>
-    public partial class InputManager : GameSystemBase
+    public partial class InputManager : ComponentBase
     {
+        /// <summary>
+        /// The state of each Virtualbutton in a config.
+        /// </summary>
+        private class VirtualButtonsState
+        {
+            public Dictionary<object, float> Values { get; } = new Dictionary<object, float>();
+            public Dictionary<object, bool> Pressed { get; } = new Dictionary<object, bool>();
+            public Dictionary<object, bool> Down { get; } = new Dictionary<object, bool>();
+            public Dictionary<object, bool> Released { get; } = new Dictionary<object, bool>();
+
+            public void Clear()
+            {
+                Values.Clear();
+                Pressed.Clear();
+                Down.Clear();
+                Released.Clear();
+            }
+        }
+        
         //this is used in some mobile platform for accelerometer stuff
         internal const float G = 9.81f;
         internal const float DesiredSensorUpdateRate = 60;
@@ -35,7 +54,7 @@ namespace Stride.Input
         private readonly List<GestureEvent> currentGestureEvents = new List<GestureEvent>();
 
         private readonly Dictionary<GestureConfig, GestureRecognizer> gestureConfigToRecognizer = new Dictionary<GestureConfig, GestureRecognizer>();
-        private readonly List<Dictionary<object, float>> virtualButtonValues = new List<Dictionary<object, float>>();
+        private readonly List<VirtualButtonsState> virtualButtonStates = new List<VirtualButtonsState>();
 
         // Mapping of device guid to device
         private readonly Dictionary<Guid, IInputDevice> devicesById = new Dictionary<Guid, IInputDevice>();
@@ -51,6 +70,8 @@ namespace Stride.Input
 
         private readonly Dictionary<Type, IInputEventRouter> eventRouters = new Dictionary<Type, IInputEventRouter>();
 
+        private GameContext gameContext;
+
         private Dictionary<IInputSource, EventHandler<TrackingCollectionChangedEventArgs>> devicesCollectionChangedActions = new Dictionary<IInputSource, EventHandler<TrackingCollectionChangedEventArgs>>();
 
 #if STRIDE_INPUT_RAWINPUT
@@ -60,10 +81,9 @@ namespace Stride.Input
         /// <summary>
         /// Initializes a new instance of the <see cref="InputManager"/> class.
         /// </summary>
-        internal InputManager(IServiceRegistry registry) : base(registry)
+        /// <param name="gameContext">The game context.</param>
+        public InputManager()
         {
-            Enabled = true;
-            
             Gestures = new TrackingCollection<GestureConfig>();
             Gestures.CollectionChanged += GesturesOnCollectionChanged;
 
@@ -224,26 +244,29 @@ namespace Stride.Input
         /// Gets the collection of connected sensor devices
         /// </summary>
         public IReadOnlyList<ISensorDevice> Sensors => sensors;
-        
+
         /// <summary>
         /// Should raw input be used on windows
         /// </summary>
         public bool UseRawInput
         {
-#if STRIDE_INPUT_RAWINPUT
+#if (STRIDE_UI_WINFORMS || STRIDE_UI_WPF) && STRIDE_INPUT_RAWINPUT
             get
             {
                 return rawInputEnabled;
             }
             set
             {
+                if (Platform.Type != PlatformType.Windows)
+                    return;
+
                 InputSourceWindowsRawInput rawInputSource = Sources.OfType<InputSourceWindowsRawInput>().FirstOrDefault();
 
                 if (value)
                 {
-                    if (rawInputSource == null)
+                    if (rawInputSource == null && gameContext is GameContextWinforms gameContextWinforms)
                     {
-                        rawInputSource = new InputSourceWindowsRawInput();
+                        rawInputSource = new InputSourceWindowsRawInput(gameContextWinforms.Control);
                         Sources.Add(rawInputSource);
                     }
                 }
@@ -291,19 +314,16 @@ namespace Stride.Input
                 (screenCoordinates.Y * fromSize.Height - destinationRectangle.Y) / destinationRectangle.Height);
         }
 
-        public override void Initialize()
+        public void Initialize(GameContext gameContext)
         {
-            base.Initialize();
-
-            Game.Activated += OnApplicationResumed;
-            Game.Deactivated += OnApplicationPaused;
+            this.gameContext = gameContext ?? throw new ArgumentNullException(nameof(gameContext));
 
             AddSources();
 
             // After adding initial devices, reassign gamepad id's
             // this creates a beter index assignment in the case where you have both an xbox controller and another controller at startup
             var sortedGamePads = GamePads.OrderBy(x => x.CanChangeIndex);
-            
+
             foreach (var gamePad in sortedGamePads)
             {
                 if (gamePad.CanChangeIndex)
@@ -394,7 +414,7 @@ namespace Stride.Input
             }
         }
 
-        public override void Update(GameTime gameTime)
+        public void Update(GameTime gameTime)
         {
             ResetGlobalInputState();
 
@@ -432,7 +452,7 @@ namespace Stride.Input
             }
 
             // Update virtual buttons
-            UpdateVirtualButtonValues();
+            UpdateVirtualButtonStates();
 
             // Update gestures
             UpdateGestureEvents(gameTime.Elapsed);
@@ -461,43 +481,109 @@ namespace Stride.Input
                 pair.Value.Listeners.Remove(listener);
             }
         }
-        
+
         /// <summary>
         /// Gets a binding value for the specified name and the specified config extract from the current <see cref="VirtualButtonConfigSet"/>.
         /// </summary>
-        /// <param name="configIndex">An index to a <see cref="VirtualButtonConfig"/> stored in the <see cref="VirtualButtonConfigSet"/></param>
+        /// <param name="configIndex">An index to a <see cref="VirtualButtonConfig"/> stored in the <see cref="VirtualButtonConfigSet"/>.</param>
         /// <param name="bindingName">Name of the binding.</param>
         /// <returns>The value of the binding.</returns>
+        [Obsolete("This method is obsolete. Call GetVirtualButtonValue instead.")]
         public virtual float GetVirtualButton(int configIndex, object bindingName)
         {
-            if (VirtualButtonConfigSet == null || configIndex < 0 || configIndex >= virtualButtonValues.Count)
+            return GetVirtualButtonValue(configIndex, bindingName);
+        }
+
+        /// <summary>
+        /// Gets a binding value for the specified name and the specified config extract from the current <see cref="VirtualButtonConfigSet"/>.
+        /// </summary>
+        /// <param name="configIndex">An index to a <see cref="VirtualButtonConfig"/> stored in the <see cref="VirtualButtonConfigSet"/>.</param>
+        /// <param name="bindingName">Name of the binding.</param>
+        /// <returns>The value of the binding.</returns>
+        public virtual float GetVirtualButtonValue(int configIndex, object bindingName)
+        {
+            if (VirtualButtonConfigSet == null || configIndex < 0 || configIndex >= virtualButtonStates.Count)
             {
                 return 0.0f;
             }
-
-            float value;
-            virtualButtonValues[configIndex].TryGetValue(bindingName, out value);
+            
+            virtualButtonStates[configIndex].Values.TryGetValue(bindingName, out float value);
             return value;
         }
-        
-        private void OnApplicationPaused(object sender, EventArgs e)
+
+        /// <summary>
+        /// Determines whether the specified binding in the specified config in the current <see cref="VirtualButtonConfigSet"/> was pressed since the previous Update. 
+        /// </summary>
+        /// <param name="configIndex">An index to a <see cref="VirtualButtonConfig"/> stored in the <see cref="VirtualButtonConfigSet"/>.</param>
+        /// <param name="bindingName">Name of the binding.</param>
+        /// <returns><c>true</c> if the binding was pressed; otherwise, <c>false</c>.</returns>
+        public virtual bool IsVirtualButtonPressed(int configIndex, object bindingName)
         {
-            // Pause sources
+            if (VirtualButtonConfigSet == null || configIndex < 0 || configIndex >= virtualButtonStates.Count)
+            {
+                return false;
+            }
+            
+            virtualButtonStates[configIndex].Pressed.TryGetValue(bindingName, out bool isPressed);
+            return isPressed;
+        }
+        
+        /// <summary>
+        /// Determines whether the specified binding in the specified config in the current <see cref="VirtualButtonConfigSet"/> is currently pressed down. 
+        /// </summary>
+        /// <param name="configIndex">An index to a <see cref="VirtualButtonConfig"/> stored in the <see cref="VirtualButtonConfigSet"/>.</param>
+        /// <param name="bindingName">Name of the binding.</param>
+        /// <returns><c>true</c> if the binding is currently pressed down; otherwise, <c>false</c>.</returns>
+        public virtual bool IsVirtualButtonDown(int configIndex, object bindingName)
+        {
+            if (VirtualButtonConfigSet == null || configIndex < 0 || configIndex >= virtualButtonStates.Count)
+            {
+                return false;
+            }
+            
+            virtualButtonStates[configIndex].Down.TryGetValue(bindingName, out bool isDown);
+            return isDown;
+        }
+        
+        /// <summary>
+        /// Determines whether the specified binding in the specified config in the current <see cref="VirtualButtonConfigSet"/> was released since the previous Update. 
+        /// </summary>
+        /// <param name="configIndex">An index to a <see cref="VirtualButtonConfig"/> stored in the <see cref="VirtualButtonConfigSet"/>.</param>
+        /// <param name="bindingName">Name of the binding.</param>
+        /// <returns><c>true</c> if the binding was released; otherwise, <c>false</c>.</returns>
+        public virtual bool IsVirtualButtonReleased(int configIndex, object bindingName)
+        {
+            if (VirtualButtonConfigSet == null || configIndex < 0 || configIndex >= virtualButtonStates.Count)
+            {
+                return false;
+            }
+            
+            virtualButtonStates[configIndex].Released.TryGetValue(bindingName, out bool isReleased);
+            return isReleased;
+        }
+
+        /// <summary>
+        /// Pause all input sources.
+        /// </summary>
+        public void Pause()
+        {
             foreach (var source in Sources)
             {
                 source.Pause();
             }
         }
 
-        private void OnApplicationResumed(object sender, EventArgs e)
+        /// <summary>
+        /// Resume all input sources.
+        /// </summary>
+        public void Resume()
         {
-            // Resume sources
             foreach (var source in Sources)
             {
                 source.Resume();
             }
         }
-        
+
         private void SourcesOnCollectionChanged(object o, TrackingCollectionChangedEventArgs e)
         {
             var source = (IInputSource)e.Item;
@@ -540,7 +626,7 @@ namespace Stride.Input
         {
             eventRouters[inputEvent.GetType()].PoolEvent(inputEvent);
         }
-
+        
         /// <summary>
         /// Resets the <see cref="Sources"/> collection back to it's default values
         /// </summary>
@@ -580,40 +666,41 @@ namespace Stride.Input
 
         private void AddSources()
         {
-            // Create input sources
-            switch (Game.Context.ContextType)
+            var context = gameContext;
+
+            // Add window specific input source
+            var windowInputSource = InputSourceFactory.NewWindowInputSource(context);
+            Sources.Add(windowInputSource);
+
+            // Add platform specific input sources
+            switch (context.ContextType)
             {
 #if STRIDE_UI_SDL
                 case AppContextType.DesktopSDL:
-                    Sources.Add(new InputSourceSDL());
                     break;
 #endif
 #if STRIDE_PLATFORM_ANDROID
                 case AppContextType.Android:
-                    Sources.Add(new InputSourceAndroid());
                     break;
 #endif
 #if STRIDE_PLATFORM_IOS
                 case AppContextType.iOS:
-                    Sources.Add(new InputSourceiOS());
                     break;
 #endif
 #if STRIDE_PLATFORM_UWP
                 case AppContextType.UWPXaml:
                 case AppContextType.UWPCoreWindow:
-                    Sources.Add(new InputSourceUWP());
                     break;
 #endif
                 case AppContextType.Desktop:
-#if STRIDE_PLATFORM_WINDOWS && (STRIDE_UI_WINFORMS || STRIDE_UI_WPF)
-                    Sources.Add(new InputSourceWinforms());
+#if (STRIDE_UI_WINFORMS || STRIDE_UI_WPF)
                     Sources.Add(new InputSourceWindowsDirectInput());
                     if (InputSourceWindowsXInput.IsSupported())
                         Sources.Add(new InputSourceWindowsXInput());
-#endif
 #if STRIDE_INPUT_RAWINPUT
-                    if (rawInputEnabled)
-                        Sources.Add(new InputSourceWindowsRawInput());
+                    if (rawInputEnabled && context is GameContextWinforms gameContextWinforms)
+                        Sources.Add(new InputSourceWindowsRawInput(gameContextWinforms.Control));
+#endif
 #endif
                     break;
                 default:
@@ -633,12 +720,6 @@ namespace Stride.Input
             {
                 source.Dispose();
             }
-
-            Game.Activated -= OnApplicationResumed;
-            Game.Deactivated -= OnApplicationPaused;
-
-            // ensure that OnApplicationPaused is called before destruction, when Game.Deactivated event is not triggered.
-            OnApplicationPaused(this, EventArgs.Empty);
         }
 
         private void GesturesOnCollectionChanged(object sender, TrackingCollectionChangedEventArgs trackingCollectionChangedEventArgs)
@@ -901,33 +982,38 @@ namespace Stride.Input
             }
         }
 
-        private void UpdateVirtualButtonValues()
+        private void UpdateVirtualButtonStates()
         {
-            if (VirtualButtonConfigSet != null)
+            if (VirtualButtonConfigSet == null)
             {
-                for (int i = 0; i < VirtualButtonConfigSet.Count; i++)
+                return;
+            }
+
+            for (int i = 0; i < VirtualButtonConfigSet.Count; i++)
+            {
+                var config = VirtualButtonConfigSet[i];
+
+                VirtualButtonsState configState;
+                if (i == virtualButtonStates.Count)
                 {
-                    var config = VirtualButtonConfigSet[i];
+                    configState = new VirtualButtonsState();
+                    virtualButtonStates.Add(configState);
+                }
+                else
+                {
+                    configState = virtualButtonStates[i];
+                }
 
-                    Dictionary<object, float> mapNameToValue;
-                    if (i == virtualButtonValues.Count)
-                    {
-                        mapNameToValue = new Dictionary<object, float>();
-                        virtualButtonValues.Add(mapNameToValue);
-                    }
-                    else
-                    {
-                        mapNameToValue = virtualButtonValues[i];
-                    }
+                configState.Clear();
 
-                    mapNameToValue.Clear();
-
-                    if (config != null)
+                if (config != null)
+                {
+                    foreach (object name in config.BindingNames)
                     {
-                        foreach (var name in config.BindingNames)
-                        {
-                            mapNameToValue[name] = config.GetValue(this, name);
-                        }
+                        configState.Values[name] = config.GetValue(this, name);
+                        configState.Pressed[name] = config.IsPressed(this, name);
+                        configState.Down[name] = config.IsDown(this, name);
+                        configState.Released[name] = config.IsReleased(this, name);
                     }
                 }
             }

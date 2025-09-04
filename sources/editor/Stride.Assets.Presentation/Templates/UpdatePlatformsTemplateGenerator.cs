@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -116,7 +116,7 @@ namespace Stride.Assets.Presentation.Templates
             var templateGameLibrary = PrepareTemplate(parameters, "ProjectLibrary.Game/ProjectLibrary.Game.ttproj", PlatformType.Shared, null, null, ProjectType.Library);
             var options = ProjectTemplateGeneratorHelper.GetOptions(parameters);
             var newGameTargetFrameworks = templateGameLibrary.GeneratePart(@"..\Common.TargetFrameworks.targets.t4", logger, options);
-            PatchGameProject(newGameTargetFrameworks, gameProject.FullPath.ToWindowsPath());
+            PatchGameProject(newGameTargetFrameworks, gameProject.FullPath.ToOSPath());
 
             // Generate missing platforms
             bool forceGenerating = parameters.GetTag(ForcePlatformRegenerationKey);

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Linq;
@@ -64,7 +64,7 @@ namespace Stride.Navigation.Tests
             base.Update(gameTime);
             if (gameTime.Total > TimeSpan.FromSeconds(6))
             {
-                Assert.True(false, "Test timed out");
+                Assert.Fail("Test timed out");
             }
         }
 

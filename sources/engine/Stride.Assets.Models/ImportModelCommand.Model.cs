@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -27,13 +27,12 @@ namespace Stride.Assets.Models
 
         public bool Allow32BitIndex { get; set; }
         public int MaxInputSlots { get; set; }
-        public bool AllowUnsignedBlendIndices { get; set; }
         public bool DeduplicateMaterials { get; set; }
         public List<ModelMaterial> Materials { get; set; }
         public string EffectName { get; set; }
 
         public List<IModelModifier> ModelModifiers { get; set; }
-        
+
         /// <summary>
         /// Checks if the vertex buffer input slots for the model are supported by the target graphics profile level
         /// </summary>
@@ -85,7 +84,7 @@ namespace Stride.Assets.Models
             {
                 if (SkeletonUrl != null)
                 {
-                    // Load the skeleton 
+                    // Load the skeleton
                     skeleton = contentManager.Load<Skeleton>(SkeletonUrl);
                 }
                 else

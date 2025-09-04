@@ -1,9 +1,9 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 namespace Stride.Graphics
 {
     /// <summary>
-    /// A GPU resource mapped for CPU access. This is returned by using <see cref="GraphicsDevice.MapSubresource"/>
+    /// A GPU resource mapped for CPU access. This is returned by using <see cref="CommandList.MapSubresource"/>
     /// </summary>
     public partial struct MappedResource
     {

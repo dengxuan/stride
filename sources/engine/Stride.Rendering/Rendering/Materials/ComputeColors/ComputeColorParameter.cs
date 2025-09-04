@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #pragma warning disable SA1402 // File may only contain a single class
 using System.ComponentModel;
@@ -21,12 +21,7 @@ namespace Stride.Rendering.Materials.ComputeColors
     [DataContract("ComputeColorParameterTexture")]
     public class ComputeColorParameterTexture : ComputeColorParameter
     {
-        public ComputeColorParameterTexture()
-        {
-            Texture = new ComputeTextureColor();
-        }
-
-        public ComputeTextureColor Texture { get; private set; }
+        public ComputeTextureColor Texture { get; } = new ComputeTextureColor();
     }
 
     [DataContract]
@@ -44,6 +39,16 @@ namespace Stride.Rendering.Materials.ComputeColors
             : base()
         {
             Value = string.Empty;
+        }
+    }
+
+    [DataContract("ComputeColorParameterBool")]
+    public class ComputeColorParameterBool : ComputeColorParameterValue<bool>
+    {
+        public ComputeColorParameterBool()
+            : base()
+        {
+            Value = false;
         }
     }
 

@@ -2,12 +2,13 @@
 
 setlocal
 
-set STARTTIME=%TIME%
+set STARTTIME=%TIME: =0%
 set __SkipTestBuild=true
 set __BuildType=Debug
-set __BuildVerbosity=m
+set __BuildVerbosity=n
 set __BuildDoc=0
 set __ContinueOnError=false
+set __SelectedProject=Stride.sln
 
 :Arg_Loop
 rem This does not check for duplicate arguments, the last one will take precedence
@@ -35,7 +36,7 @@ echo.
 echo   debug   : Build debug version
 echo   release : Build release version
 echo   tests   : Build tests
-echo verbosity : Verbosity level [q]uiet, [m]inimal, [n]ormal or [d]iagnostic. Default is [m]inimal
+echo verbosity : Verbosity level [q]uiet, [m]inimal, [n]ormal or [d]iagnostic. Default is [n]ormal
 echo   project : Chosen project
 echo.
 
@@ -70,68 +71,6 @@ call :compile
 set __SkipTestBuild=%__OldSkipTestBuild%
 if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
 
-set Project=Stride.Direct3D.sln
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
-set Project=Stride.Direct3D.SDL.sln
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
-set Project=Stride.Direct3D.CoreCLR.sln
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
-set Project=Stride.Direct3D12.sln
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
-set Project=Stride.Null.sln
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
-set Project=Stride.Vulkan.sln
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
-set Project=Stride.Vulkan.SDL.sln
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
-set Project=Stride.OpenGL.sln
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
-set Project=Stride.OpenGL.CoreCLR.sln
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
-set Project=Stride.Linux.sln
-set _platform_target=Linux
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
-set Project=Stride.Linux.Vulkan.sln
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
-set Project=Stride.Linux.CoreCLR.sln
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
-set Project=Stride.Linux.Vulkan.CoreCLR.sln
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
-set Project=Stride.macOS.sln
-set _platform_target=macOS
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
-set Project=Stride.macOS.CoreCLR.sln
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
 set Project=Stride.Android.sln
 set _platform_target=Android
 call :compile
@@ -142,20 +81,15 @@ set _platform_target=iPhone
 call :compile
 if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
 
-set Project=Stride.UWP.sln
-set _platform_target=UWP
-call :compile
-if %ERRORLEVEL% NEQ 0 if "%__ContinueOnError%" == "false" goto exit
-
 goto exit
 
 rem Compile our solution. The following variables needs to be set:
 rem "Project" is the solution name
 rem "_platform_target" is the platform being targeted
 :compile
-set _option=/nologo /nr:false /m /verbosity:%__BuildVerbosity% /p:Configuration=%__BuildType% /p:Platform="%_platform_target%" /p:StrideSkipUnitTests=%__SkipTestBuild% %Project%
+set _option=/nologo /nr:false /m /verbosity:%__BuildVerbosity% /p:Configuration=%__BuildType% /p:Platform="%_platform_target%" /p:StrideSkipUnitTests=%__SkipTestBuild% %Project% /p:DeployExtension=false
 
-if "%__BuildDoc%" == "1" set _option=%_option% /p:StrideGenerateDoc=true
+if "%__BuildDoc%" == "1" set _option=%_option% /p:StridePublicApi=true
 
 rem Skip Compilation if __SelectedProject was set and does not match what was requested
 if "%__SelectedProject%" NEQ "" (
@@ -181,7 +115,7 @@ goto :eof
 
 :exit
 
-set ENDTIME=%TIME%
+set ENDTIME=%TIME: =0%
 
 echo.
 echo Starting time was: %STARTTIME%
@@ -196,7 +130,7 @@ rem calculating the duration is easy
 set /A DURATION=%ENDTIME%-%STARTTIME%
 
 rem we might have measured the time inbetween days
-if %ENDTIME% LSS %STARTTIME% set set /A DURATION=%STARTTIME%-%ENDTIME%
+if %ENDTIME% LSS %STARTTIME% set /A DURATION=%STARTTIME%-%ENDTIME%
 
 set /A DURATION=%DURATION%/1000
 

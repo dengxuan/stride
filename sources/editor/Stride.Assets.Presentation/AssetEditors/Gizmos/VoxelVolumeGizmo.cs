@@ -1,9 +1,10 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core;
 using Stride.Core.Mathematics;
 using Stride.Engine;
+using Stride.Engine.Gizmos;
 using Stride.Graphics;
 using Stride.Rendering;
 using Stride.Rendering.Lights;
@@ -32,7 +33,7 @@ namespace Stride.Assets.Presentation.AssetEditors.Gizmos
         {
             debugRootEntity = new Entity($"Voxel volume of {Component.Entity.Name}");
 
-            material = GizmoUniformColorMaterial.Create(GraphicsDevice, Color.CornflowerBlue);
+            material = GizmoEmissiveColorMaterial.Create(GraphicsDevice, Color.CornflowerBlue);
 
             box = new BoxMesh(GraphicsDevice);
             box.Build();

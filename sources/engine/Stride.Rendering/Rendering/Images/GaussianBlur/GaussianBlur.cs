@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -14,8 +14,10 @@ namespace Stride.Rendering.Images
     /// </summary>
     /// <remarks>
     /// To improve performance of this gaussian blur is using:
-    /// - a separable 1D horizontal and vertical blur
-    /// - linear filtering to reduce the number of taps
+    /// <list type="bullet">
+    /// <item>a separable 1D horizontal and vertical blur</item>
+    /// <item>linear filtering to reduce the number of taps</item>
+    /// </list>
     /// </remarks>
     [DataContract("GaussianBlur")]
     [Display("Gaussian Blur")]

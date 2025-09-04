@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core.Storage;
@@ -10,7 +10,7 @@ namespace Stride.Core.Serialization
     /// </summary>
     public abstract class SerializerFactory
     {
-        public abstract DataSerializer GetSerializer(SerializerSelector selector, ref ObjectId typeId);
-        public abstract DataSerializer GetSerializer(SerializerSelector selector, Type type);
+        public abstract DataSerializer? GetSerializer(SerializerSelector selector, ref ObjectId typeId);
+        public abstract DataSerializer? GetSerializer(SerializerSelector selector, Type type);
     }
 }

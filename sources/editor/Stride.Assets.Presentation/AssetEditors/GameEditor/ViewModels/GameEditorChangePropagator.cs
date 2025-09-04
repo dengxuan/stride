@@ -1,4 +1,4 @@
-﻿// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Threading.Tasks;
@@ -13,6 +13,9 @@ using Stride.Core.Quantum;
 using Stride.Assets.Presentation.AssetEditors.AssetCompositeGameEditor.ViewModels;
 using Stride.Assets.Presentation.AssetEditors.GameEditor.Services;
 using Stride.Particles.Materials;
+using Stride.Core.Reflection;
+using Stride.Core.Assets.Quantum.Visitors;
+using System.Collections.Generic;
 
 namespace Stride.Assets.Presentation.AssetEditors.GameEditor.ViewModels
 {
@@ -165,9 +168,10 @@ namespace Stride.Assets.Presentation.AssetEditors.GameEditor.ViewModels
                     throw new InvalidOperationException("Unable to retrieve the game-side node");
 
                 var index = (e as ItemChangeEventArgs)?.Index ?? NodeIndex.Empty;
-                if (!AssetRegistry.IsContentType(e.Node.Descriptor.GetInnerCollectionType()))
+                var innerType = e.Node.Descriptor.GetInnerCollectionType();
+                if (!AssetRegistry.CanBeAssignedToContentTypes(innerType, checkIsUrlType: false))
                 {
-                    if (e.Node.Type.IsValueType)
+                    if (Editor.NodeContainer.NodeBuilder.PrimitiveTypeFilter.IsPrimitiveType(innerType))
                     {
                         // No need to retrieve and/or duplicate the value for value type, we just propagate the change
                         await Editor.Controller.InvokeAsync(() => UpdateGameSideContent(gameSideNode, e.NewValue, e.ChangeType, index));
@@ -175,9 +179,40 @@ namespace Stride.Assets.Presentation.AssetEditors.GameEditor.ViewModels
                     else
                     {
                         var value = RetrieveValue(assetNode, e.NewValue, e.ChangeType, index);
+
+                        if (value == null && assetNode.Descriptor.Category == DescriptorCategory.Set)
+                        {
+                            value = e.NewValue;
+                        }
                         var isReference = await PropagatePartReference(gameSideNode, value, e);
                         if (!isReference)
                         {
+                            // If necessary, unregister old content references that might referenced by children nodes
+                            if (e.OldValue != null)
+                            {
+                                var oldNode = Editor.NodeContainer.GetNode(e.OldValue);
+
+                                var visitor = new AssetGraphVisitorBase(Owner.Asset.PropertyGraph.Definition);
+                                var removedNodes = new HashSet<IGraphNode>();
+                                // If we're in scenario where rootNode is an object node and index is not empty, we might already have the node in the dictionary so let's check this in Visiting
+                                visitor.Visiting += (node, path) =>
+                                {
+                                    var gameSideNode = ((IAssetNode)node).GetContent(GameSideContentKey);
+                                    if (gameSideNode != null)
+                                        removedNodes.Add(gameSideNode);
+                                };
+
+                                if (oldNode != null)
+                                {
+                                    visitor.Visit(oldNode);
+                                }
+
+                                await Editor.Controller.InvokeTask(async () =>
+                                {
+                                    await Editor.Controller.Loader.Manager.ClearContentReferencesFromNodes(Owner.Id, removedNodes);
+                                });
+                            }
+
                             await Editor.Controller.InvokeAsync(() =>
                             {
                                 var gameSideValue = CloneObjectForGameSide(value, assetNode, gameSideNode);
@@ -270,7 +305,7 @@ namespace Stride.Assets.Presentation.AssetEditors.GameEditor.ViewModels
         {
             if (editor == null) throw new ArgumentNullException(nameof(editor));
 
-            if (!AssetRegistry.IsContentType(gameSideNode.Descriptor.GetInnerCollectionType()))
+            if (!AssetRegistry.CanBeAssignedToContentTypes(gameSideNode.Descriptor.GetInnerCollectionType(), checkIsUrlType: false))
                 return;
 
             // Grab the old referenced object if it's not null

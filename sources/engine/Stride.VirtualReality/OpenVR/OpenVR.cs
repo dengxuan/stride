@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #if STRIDE_GRAPHICS_API_DIRECT3D11
 
@@ -9,6 +9,8 @@ using Valve.VR;
 using Stride.Core;
 using Stride.Core.Mathematics;
 using Stride.Graphics;
+using System.Runtime.CompilerServices;
+using System.Diagnostics;
 
 namespace Stride.VirtualReality
 {
@@ -131,7 +133,7 @@ namespace Stride.VirtualReality
             public bool GetTouchUp(ButtonId buttonId) { return GetTouchUp(1ul << (int)buttonId); }
 
             public Vector2 GetAxis(ButtonId buttonId = ButtonId.ButtonSteamVrTouchpad)
-            {               
+            {
                 var axisId = (uint)buttonId - (uint)EVRButtonId.k_EButton_Axis0;
                 switch (axisId)
                 {
@@ -147,7 +149,7 @@ namespace Stride.VirtualReality
             public void Update()
             {
                 PreviousState = State;
-                Valve.VR.OpenVR.System.GetControllerState(ControllerIndex, ref State, (uint)Utilities.SizeOf<VRControllerState_t>());
+                Valve.VR.OpenVR.System.GetControllerState(ControllerIndex, ref State, (uint)Unsafe.SizeOf<VRControllerState_t>());
             }
         }
 
@@ -196,7 +198,7 @@ namespace Stride.VirtualReality
 
         static OpenVR()
         {
-            NativeLibrary.PreloadLibrary("openvr_api.dll", typeof(OpenVR));
+            NativeLibraryHelper.PreloadLibrary("openvr_api", typeof(OpenVR));
         }
 
         public static bool InitDone = false;
@@ -212,7 +214,7 @@ namespace Stride.VirtualReality
 
             InitDone = true;
 
-            //this makes the camera behave like oculus rift default!
+            //set Universe to Seated by default
             Valve.VR.OpenVR.Compositor.SetTrackingSpace(ETrackingUniverseOrigin.TrackingUniverseSeated);
 
             return true;
@@ -229,7 +231,7 @@ namespace Stride.VirtualReality
         {
             var tex = new Texture_t
             {
-                eType = EGraphicsAPIConvention.API_DirectX,
+                eType = ETextureType.DirectX,
                 eColorSpace = EColorSpace.Auto,
                 handle = texture.NativeResource.NativePointer,
             };
@@ -251,10 +253,11 @@ namespace Stride.VirtualReality
 
         private static unsafe void GetEyeToHeadUnsafe(int eyeIndex, out Matrix pose)
         {
+            Debug.Assert(Unsafe.SizeOf<Matrix>() > Unsafe.SizeOf<HmdMatrix34_t>());
             pose = Matrix.Identity;
             var eye = eyeIndex == 0 ? EVREye.Eye_Left : EVREye.Eye_Right;
             var eyeToHead = Valve.VR.OpenVR.System.GetEyeToHeadTransform(eye);
-            Utilities.CopyMemory((IntPtr)Interop.Fixed(ref pose), (IntPtr)Interop.Fixed(ref eyeToHead), Utilities.SizeOf<HmdMatrix34_t>());
+            Unsafe.As<Matrix, HmdMatrix34_t>(ref pose) = eyeToHead;
         }
 
         public static void UpdatePoses()
@@ -264,7 +267,7 @@ namespace Stride.VirtualReality
 
         public static void Recenter()
         {
-            Valve.VR.OpenVR.System.ResetSeatedZeroPose();
+            Valve.VR.OpenVR.Chaperone.ResetZeroPose(ETrackingUniverseOrigin.TrackingUniverseSeated);
         }
 
         public static void SetTrackingSpace(ETrackingUniverseOrigin space)
@@ -279,11 +282,11 @@ namespace Stride.VirtualReality
 
         private static unsafe DeviceState GetControllerPoseUnsafe(int controllerIndex, out Matrix pose, out Vector3 velocity, out Vector3 angVelocity)
         {
+            Debug.Assert(Unsafe.SizeOf<Vector3>() == Unsafe.SizeOf<HmdVector3_t>());
+            Debug.Assert(Unsafe.SizeOf<Matrix>() > Unsafe.SizeOf<HmdMatrix34_t>());
             var currentIndex = 0;
 
             pose = Matrix.Identity;
-            velocity = Vector3.Zero;
-            angVelocity = Vector3.Zero;
 
             for (uint index = 0; index < DevicePoses.Length; index++)
             {
@@ -291,16 +294,17 @@ namespace Stride.VirtualReality
                 {
                     if (currentIndex == controllerIndex)
                     {
-                        Utilities.CopyMemory((IntPtr)Interop.Fixed(ref pose), (IntPtr)Interop.Fixed(ref DevicePoses[index].mDeviceToAbsoluteTracking), Utilities.SizeOf<HmdMatrix34_t>());
-                        Utilities.CopyMemory((IntPtr)Interop.Fixed(ref velocity), (IntPtr)Interop.Fixed(ref DevicePoses[index].vVelocity), Utilities.SizeOf<HmdVector3_t>());
-                        Utilities.CopyMemory((IntPtr)Interop.Fixed(ref angVelocity), (IntPtr)Interop.Fixed(ref DevicePoses[index].vAngularVelocity), Utilities.SizeOf<HmdVector3_t>());
+                        ref var devicePose = ref DevicePoses[index];
+                        Unsafe.As<Matrix, HmdMatrix34_t>(ref pose) = devicePose.mDeviceToAbsoluteTracking;
+                        velocity = Unsafe.As<HmdVector3_t, Vector3>(ref devicePose.vVelocity);
+                        angVelocity = Unsafe.As<HmdVector3_t, Vector3>(ref devicePose.vAngularVelocity);
 
                         var state = DeviceState.Invalid;
-                        if (DevicePoses[index].bDeviceIsConnected && DevicePoses[index].bPoseIsValid)
+                        if (devicePose.bDeviceIsConnected && devicePose.bPoseIsValid)
                         {
                             state = DeviceState.Valid;
                         }
-                        else if (DevicePoses[index].bDeviceIsConnected && !DevicePoses[index].bPoseIsValid && DevicePoses[index].eTrackingResult == ETrackingResult.Running_OutOfRange)
+                        else if (devicePose.bDeviceIsConnected && !devicePose.bPoseIsValid && devicePose.eTrackingResult == ETrackingResult.Running_OutOfRange)
                         {
                             state = DeviceState.OutOfRange;
                         }
@@ -310,7 +314,8 @@ namespace Stride.VirtualReality
                     currentIndex++;
                 }
             }
-
+            velocity = default;
+            angVelocity = default;
             return DeviceState.Invalid;
         }
 
@@ -321,21 +326,21 @@ namespace Stride.VirtualReality
 
         private static unsafe DeviceState GetTrackerPoseUnsafe(int trackerIndex, out Matrix pose, out Vector3 velocity, out Vector3 angVelocity)
         {
+            Debug.Assert(Unsafe.SizeOf<Vector3>() == Unsafe.SizeOf<HmdVector3_t>());
+            Debug.Assert(Unsafe.SizeOf<Matrix>() > Unsafe.SizeOf<HmdMatrix34_t>());
             pose = Matrix.Identity;
-            velocity = Vector3.Zero;
-            angVelocity = Vector3.Zero;
-            var index = trackerIndex;
+            ref var devicePose = ref DevicePoses[trackerIndex];
 
-            Utilities.CopyMemory((IntPtr)Interop.Fixed(ref pose), (IntPtr)Interop.Fixed(ref DevicePoses[index].mDeviceToAbsoluteTracking), Utilities.SizeOf<HmdMatrix34_t>());
-            Utilities.CopyMemory((IntPtr)Interop.Fixed(ref velocity), (IntPtr)Interop.Fixed(ref DevicePoses[index].vVelocity), Utilities.SizeOf<HmdVector3_t>());
-            Utilities.CopyMemory((IntPtr)Interop.Fixed(ref angVelocity), (IntPtr)Interop.Fixed(ref DevicePoses[index].vAngularVelocity), Utilities.SizeOf<HmdVector3_t>());
+            Unsafe.As<Matrix, HmdMatrix34_t>(ref pose) = devicePose.mDeviceToAbsoluteTracking;
+            velocity = Unsafe.As<HmdVector3_t, Vector3>(ref devicePose.vVelocity);
+            angVelocity = Unsafe.As<HmdVector3_t, Vector3>(ref devicePose.vAngularVelocity);
 
             var state = DeviceState.Invalid;
-            if (DevicePoses[index].bDeviceIsConnected && DevicePoses[index].bPoseIsValid)
+            if (devicePose.bDeviceIsConnected && devicePose.bPoseIsValid)
             {
                 state = DeviceState.Valid;
             }
-            else if (DevicePoses[index].bDeviceIsConnected && !DevicePoses[index].bPoseIsValid && DevicePoses[index].eTrackingResult == ETrackingResult.Running_OutOfRange)
+            else if (devicePose.bDeviceIsConnected && !devicePose.bPoseIsValid && devicePose.eTrackingResult == ETrackingResult.Running_OutOfRange)
             {
                 state = DeviceState.OutOfRange;
             }
@@ -350,16 +355,17 @@ namespace Stride.VirtualReality
 
         private static unsafe DeviceState GetHeadPoseUnsafe(out Matrix pose, out Vector3 linearVelocity, out Vector3 angularVelocity)
         {
+            Debug.Assert(Unsafe.SizeOf<Vector3>() == Unsafe.SizeOf<HmdVector3_t>());
+            Debug.Assert(Unsafe.SizeOf<Matrix>() > Unsafe.SizeOf<HmdMatrix34_t>());
             pose = Matrix.Identity;
-            linearVelocity = Vector3.Zero;
-            angularVelocity = Vector3.Zero;
             for (uint index = 0; index < DevicePoses.Length; index++)
             {
+                ref var devicePose = ref DevicePoses[index];
                 if (Valve.VR.OpenVR.System.GetTrackedDeviceClass(index) == ETrackedDeviceClass.HMD)
                 {
-                    Utilities.CopyMemory((IntPtr)Interop.Fixed(ref pose), (IntPtr)Interop.Fixed(ref DevicePoses[index].mDeviceToAbsoluteTracking), Utilities.SizeOf<HmdMatrix34_t>());
-                    Utilities.CopyMemory((IntPtr)Interop.Fixed(ref linearVelocity), (IntPtr)Interop.Fixed(ref DevicePoses[index].vVelocity), Utilities.SizeOf<HmdVector3_t>());
-                    Utilities.CopyMemory((IntPtr)Interop.Fixed(ref angularVelocity), (IntPtr)Interop.Fixed(ref DevicePoses[index].vAngularVelocity), Utilities.SizeOf<HmdVector3_t>());
+                    Unsafe.As<Matrix, HmdMatrix34_t>(ref pose) = devicePose.mDeviceToAbsoluteTracking;
+                    linearVelocity = Unsafe.As<HmdVector3_t, Vector3>(ref devicePose.vVelocity);
+                    angularVelocity = Unsafe.As<HmdVector3_t, Vector3>(ref devicePose.vAngularVelocity);
 
                     var state = DeviceState.Invalid;
                     if (DevicePoses[index].bDeviceIsConnected && DevicePoses[index].bPoseIsValid)
@@ -375,6 +381,8 @@ namespace Stride.VirtualReality
                 }
             }
 
+            linearVelocity = default;
+            angularVelocity = default;
             return DeviceState.Invalid;
         }
 
@@ -385,10 +393,10 @@ namespace Stride.VirtualReality
 
         private static unsafe void GetProjectionUnsafe(int eyeIndex, float near, float far, out Matrix projection)
         {
-            projection = Matrix.Identity;
+            Debug.Assert(Unsafe.SizeOf<HmdMatrix44_t>() == Unsafe.SizeOf<Matrix>());
             var eye = eyeIndex == 0 ? EVREye.Eye_Left : EVREye.Eye_Right;
-            var proj = Valve.VR.OpenVR.System.GetProjectionMatrix(eye, near, far, EGraphicsAPIConvention.API_DirectX);
-            Utilities.CopyMemory((IntPtr)Interop.Fixed(ref projection), (IntPtr)Interop.Fixed(ref proj), Utilities.SizeOf<Matrix>());
+            var proj = Valve.VR.OpenVR.System.GetProjectionMatrix(eye, near, far);
+            projection = Unsafe.As<HmdMatrix44_t, Matrix>(ref proj);
         }
 
         public static void ShowMirror()
@@ -406,9 +414,19 @@ namespace Stride.VirtualReality
             var nativeDevice = device.NativeDevice.NativePointer;
             var eyeTexSrv = IntPtr.Zero;
             Valve.VR.OpenVR.Compositor.GetMirrorTextureD3D11(eyeIndex == 0 ? EVREye.Eye_Left : EVREye.Eye_Right, nativeDevice, ref eyeTexSrv);
+
             var tex = new Texture(device);
-            tex.InitializeFromImpl(new ShaderResourceView(eyeTexSrv));
+            var srv = new ShaderResourceView(eyeTexSrv);
+
+            tex.InitializeFromImpl(srv);
+
             return tex;
+        }
+
+        public static void GetRecommendedRenderTargetSize(out (uint x, uint y) size)
+        {
+            size = default;
+            Valve.VR.OpenVR.System.GetRecommendedRenderTargetSize(ref size.x, ref size.y);
         }
 
         public static ulong CreateOverlay()
@@ -428,11 +446,11 @@ namespace Stride.VirtualReality
         {
             var tex = new Texture_t
             {
-                eType = EGraphicsAPIConvention.API_DirectX,
+                eType = ETextureType.DirectX,
                 eColorSpace = EColorSpace.Auto,
                 handle = texture.NativeResource.NativePointer,
             };
-           
+
             return Valve.VR.OpenVR.Overlay.SetOverlayTexture(overlayId, ref tex) == EVROverlayError.None;
         }
 
@@ -444,14 +462,12 @@ namespace Stride.VirtualReality
 
             if (followsHead)
             {
-                HmdMatrix34_t pose = new HmdMatrix34_t();
-                Utilities.CopyMemory((IntPtr)Interop.Fixed(ref pose), (IntPtr)Interop.Fixed(ref transform), Utilities.SizeOf<HmdMatrix34_t>());
+                var pose = Unsafe.As<Matrix, HmdMatrix34_t>(ref transform);
                 Valve.VR.OpenVR.Overlay.SetOverlayTransformTrackedDeviceRelative(overlayId, 0, ref pose);
             }
             else
             {
-                HmdMatrix34_t pose = new HmdMatrix34_t();
-                Utilities.CopyMemory((IntPtr)Interop.Fixed(ref pose), (IntPtr)Interop.Fixed(ref transform), Utilities.SizeOf<HmdMatrix34_t>());
+                var pose = Unsafe.As<Matrix, HmdMatrix34_t>(ref transform);
                 Valve.VR.OpenVR.Overlay.SetOverlayTransformAbsolute(overlayId, ETrackingUniverseOrigin.TrackingUniverseSeated, ref pose);
             }
         }

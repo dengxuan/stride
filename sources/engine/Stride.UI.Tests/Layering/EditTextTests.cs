@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using Xunit;
 using Stride.Core;
@@ -17,7 +17,7 @@ namespace Stride.UI.Tests.Layering
     [System.ComponentModel.Description("Tests for EditText layering")]
     public class EditTextTests
     {
-        class DummyFont : SpriteFont { }
+        public class DummyFont : SpriteFont { }
 
         /// <summary>
         /// Test the invalidations generated object property changes.

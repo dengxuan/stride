@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core;
@@ -36,6 +36,8 @@ namespace Stride.Rendering.Compositing
 
         private bool cameraSlotResolutionFailed;
         private bool cameraResolutionFailed;
+
+        private static readonly ProfilingKey CollectInnerKey = new ProfilingKey("SceneCameraRenderer.CollectInner");
 
         protected override void CollectCore(RenderContext context)
         {
@@ -94,6 +96,8 @@ namespace Stride.Rendering.Compositing
 
         protected virtual void CollectInner(RenderContext renderContext)
         {
+            using var _ = Profiler.Begin(CollectInnerKey);
+
             RenderView.CullingMask = RenderMask;
 
             Child?.Collect(renderContext);

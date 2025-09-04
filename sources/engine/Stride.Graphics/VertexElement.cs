@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2012 SharpDX - Alexandre Mutel
@@ -28,16 +28,17 @@ using Stride.Core;
 using Stride.Core.Mathematics;
 using Stride.Core.Serialization;
 using Stride.Core.Serialization.Serializers;
+using Half = Stride.Core.Mathematics.Half;
 
 namespace Stride.Graphics
 {
     /// <summary>
-    /// A description of a single element for the input-assembler stage. This structure is related to <see cref="Direct3D11.InputElement"/>.
+    /// A description of a single element for the input-assembler stage. This structure is related to <see cref="SharpDX.Direct3D11.InputElement"/>.
     /// </summary>
     /// <remarks>
-    /// Because <see cref="Direct3D11.InputElement"/> requires to have the same <see cref="VertexBufferLayout.SlotIndex"/>, <see cref="VertexBufferLayout.VertexClassification"/> and <see cref="VertexBufferLayout.instanceDataStepRate"/>,
+    /// Because <see cref="SharpDX.Direct3D11.InputElement"/> requires to have the same <see cref="VertexBufferLayout.SlotIndex"/>, <see cref="VertexBufferLayout.VertexClassification"/> and <see cref="VertexBufferLayout.instanceDataStepRate"/>,
     /// the <see cref="VertexBufferLayout"/> structure encapsulates a set of <see cref="VertexElement"/> for a particular slot, classification and instance data step rate.
-    /// Unlike the default <see cref="Direct3D11.InputElement"/>, this structure accepts a semantic name with a postfix number that will be automatically extracted to the semantic index.
+    /// Unlike the default <see cref="SharpDX.Direct3D11.InputElement"/>, this structure accepts a semantic name with a postfix number that will be automatically extracted to the semantic index.
     /// </remarks>
     /// <seealso cref="VertexBufferLayout"/>
     [DataContract]

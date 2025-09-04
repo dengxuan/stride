@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 #if STRIDE_PLATFORM_ANDROID
@@ -9,20 +9,15 @@ using System.Linq;
 using Android.Hardware;
 using Stride.Core.Mathematics;
 using Stride.Games;
-using Stride.Games.Android;
+using Window = Stride.Graphics.SDL.Window;
 
 namespace Stride.Input
 {
     /// <summary>
-    /// Provides support for pointer/keyboard/sensor input on Android
+    /// Provides support for sensor input on Android
     /// </summary>
-    internal class InputSourceAndroid : InputSourceBase
+    internal class InputSourceAndroid : InputSourceSDL
     {
-        private AndroidStrideGameView uiControl;
-        
-        private KeyboardAndroid keyboard;
-        private PointerAndroid pointer;
-
         private AndroidSensorListener accelerometerListener;
         private AndroidSensorListener gyroscopeListener;
         private AndroidSensorListener linearAccelerationListener;
@@ -39,16 +34,13 @@ namespace Stride.Input
         private float[] quaternionArray = new float[4];
         private float[] rotationVector = new float[3];
 
+        public InputSourceAndroid(Window uiControl) : base(uiControl)
+        {
+        }
+
         public override void Initialize(InputManager inputManager)
         {
-            var context = inputManager.Game.Context as GameContextAndroid;
-            uiControl = context.Control;
-
-            // Create android pointer and keyboard
-            keyboard = new KeyboardAndroid(this, uiControl);
-            pointer = new PointerAndroid(this, uiControl);
-            RegisterDevice(keyboard);
-            RegisterDevice(pointer);
+            base.Initialize(inputManager);
 
             // Create android sensors
             if ((accelerometerListener = TryGetSensorListener(SensorType.Accelerometer)) != null)
@@ -169,6 +161,8 @@ namespace Stride.Input
 
         public override void Pause()
         {
+            base.Pause();
+
             // Disable all sensors when application is paused
             accelerometerListener?.Disable();
             gyroscopeListener?.Disable();

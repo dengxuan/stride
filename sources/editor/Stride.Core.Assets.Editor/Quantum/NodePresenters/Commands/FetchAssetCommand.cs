@@ -1,11 +1,11 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System.Threading.Tasks;
 using Stride.Core.Assets.Editor.Services;
 using Stride.Core.Assets.Editor.ViewModel;
+using Stride.Core.Extensions;
 using Stride.Core.Presentation.Quantum;
 using Stride.Core.Presentation.Quantum.Presenters;
-using Stride.Core.Quantum;
 
 namespace Stride.Core.Assets.Editor.Quantum.NodePresenters.Commands
 {
@@ -38,7 +38,8 @@ namespace Stride.Core.Assets.Editor.Quantum.NodePresenters.Commands
         /// <inheritdoc/>
         public override bool CanAttach(INodePresenter nodePresenter)
         {
-            return ContentReferenceHelper.ContainsReferenceType(nodePresenter.Descriptor);
+            var type = nodePresenter.Descriptor.GetInnerCollectionType();
+            return AssetRegistry.CanBeAssignedToContentTypes(type, checkIsUrlType: true);
         }
 
         /// <inheritdoc/>
@@ -60,6 +61,5 @@ namespace Stride.Core.Assets.Editor.Quantum.NodePresenters.Commands
                 await session.Dispatcher.InvokeAsync(() => session.ActiveAssetView.SelectAssetCommand.Execute(asset));
             }
         }
-
     }
 }

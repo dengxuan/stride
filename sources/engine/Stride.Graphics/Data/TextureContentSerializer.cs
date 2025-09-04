@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core;
@@ -30,7 +30,7 @@ namespace Stride.Graphics.Data
                     texturesStreamingProvider?.UnregisterTexture(texture);
 
                     // TODO: Error handling?
-                    using (var textureData = Image.Load(stream.NativeStream))
+                    using (var textureData = Image.Load(stream.UnderlyingStream))
                     {
                         if (texture.GraphicsDevice != null)
                             texture.OnDestroyed(); //Allows fast reloading todo review maybe?
@@ -42,14 +42,22 @@ namespace Stride.Graphics.Data
                         var contentSerializerContext = stream.Context.Get(ContentSerializerContext.ContentSerializerContextProperty);
                         if (contentSerializerContext != null)
                         {
-                            var assetManager = contentSerializerContext.ContentManager;
-                            var url = contentSerializerContext.Url;
-
-                            texture.Reload = (graphicsResource) =>
+                            texture.Reload = static (graphicsResource, services) =>
                             {
-                                var textureDataReloaded = assetManager.Load<Image>(url);
-                                ((Texture)graphicsResource).Recreate(textureDataReloaded.ToDataBox());
-                                assetManager.Unload(textureDataReloaded);
+                                var assetManager = services.GetService<ContentManager>();
+                                assetManager.TryGetAssetUrl(graphicsResource, out var url);
+                                var textureDataReloaded = assetManager.Load<object>(url);
+
+                                if (textureDataReloaded is Image image)
+                                {
+                                    ((Texture)graphicsResource).Recreate(image.ToDataBox());
+                                    assetManager.Unload(textureDataReloaded);
+                                }
+                                else if (textureDataReloaded is Texture)
+                                {
+                                    ((Texture)graphicsResource).Recreate();
+                                    assetManager.Unload(textureDataReloaded);
+                                }
                             };
                         }
                     }
@@ -76,7 +84,7 @@ namespace Stride.Graphics.Data
                         // Load initial texture (with limited number of mipmaps)
                         if (storageHeader.InitialImage)
                         {
-                            using (var textureData = Image.Load(stream.NativeStream))
+                            using (var textureData = Image.Load(stream.UnderlyingStream))
                             {
                                 if (texture.GraphicsDevice != null)
                                     texture.OnDestroyed(); //Allows fast reloading todo review maybe?
@@ -103,7 +111,7 @@ namespace Stride.Graphics.Data
                         // Load initial texture and discard it (we are going to load the full chunk texture right after)
                         if (storageHeader.InitialImage)
                         {
-                            using (var textureData = Image.Load(stream.NativeStream))
+                            using (var textureData = Image.Load(stream.UnderlyingStream))
                             {
                             }
                         }

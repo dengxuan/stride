@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Runtime.InteropServices;
@@ -41,12 +41,9 @@ namespace FreeImageAPI
 			// Check the local copy instead of the static instance
 			// to prevent a second thread from setting the delegate
 			// to null, which would cause a nullreference exception
-			if (m != null)
-			{
-				// Invoke the multicast-delegate
-				m.Invoke(fif, message);
-			}
-		}
+			// Invoke the multicast-delegate
+			m?.Invoke(fif, message);
+        }
 
 		/// <summary>
 		/// Gets a value indicating if the FreeImage DLL is available or not.

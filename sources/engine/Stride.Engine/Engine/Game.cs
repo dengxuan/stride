@@ -1,12 +1,12 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
 using System.Threading.Tasks;
 using Stride.Audio;
+using Stride.Core;
 using Stride.Core.Diagnostics;
 using Stride.Core.IO;
 using Stride.Core.Mathematics;
@@ -338,9 +338,10 @@ namespace Stride.Engine
 
             // Add the input manager
             // Add it first so that it can obtained by the UI system
-            Input = new InputManager(Services);
+            var inputSystem = new InputSystem(Services);
+            Input = inputSystem.Manager;
             Services.AddService(Input);
-            GameSystems.Add(Input);
+            GameSystems.Add(inputSystem);
 
             // Initialize the systems
             base.Initialize();
@@ -427,7 +428,7 @@ namespace Stride.Engine
                     && Input.IsKeyDown(Keys.C)
                     && Input.IsKeyReleased(Keys.F12))
                 {
-                    var currentFilePath = Assembly.GetEntryAssembly().Location;
+                    var currentFilePath = PlatformFolders.ApplicationExecutablePath;
                     var timeNow = DateTime.Now.ToString("s", CultureInfo.InvariantCulture).Replace(':', '_');
                     var newFileName = Path.Combine(
                         Path.GetDirectoryName(currentFilePath),

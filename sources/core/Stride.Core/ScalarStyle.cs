@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -44,41 +44,40 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-namespace Stride.Core
+namespace Stride.Core;
+
+/// <summary>
+/// Specifies the style used for textual serialization of scalars.
+/// </summary>
+public enum ScalarStyle
 {
     /// <summary>
-    /// Specifies the style used for textual serialization of scalars.
+    /// Let the emitter choose the style.
     /// </summary>
-    public enum ScalarStyle
-    {
-        /// <summary>
-        /// Let the emitter choose the style.
-        /// </summary>
-        Any,
+    Any,
 
-        /// <summary>
-        /// The plain scalar style.
-        /// </summary>
-        Plain,
+    /// <summary>
+    /// The plain scalar style.
+    /// </summary>
+    Plain,
 
-        /// <summary>
-        /// The single-quoted scalar style.
-        /// </summary>
-        SingleQuoted,
+    /// <summary>
+    /// The single-quoted scalar style.
+    /// </summary>
+    SingleQuoted,
 
-        /// <summary>
-        /// The double-quoted scalar style.
-        /// </summary>
-        DoubleQuoted,
+    /// <summary>
+    /// The double-quoted scalar style.
+    /// </summary>
+    DoubleQuoted,
 
-        /// <summary>
-        /// The literal scalar style.
-        /// </summary>
-        Literal,
+    /// <summary>
+    /// The literal scalar style.
+    /// </summary>
+    Literal,
 
-        /// <summary>
-        /// The folded scalar style.
-        /// </summary>
-        Folded,
-    }
+    /// <summary>
+    /// The folded scalar style.
+    /// </summary>
+    Folded,
 }

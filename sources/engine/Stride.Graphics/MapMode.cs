@@ -1,9 +1,9 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 namespace Stride.Graphics
 {
     /// <summary>
-    /// Describes how the cpu is accessing a <see cref="GraphicsResource"/> with the <see cref="GraphicsDeviceContext.Map"/> method.
+    /// Describes how the CPU is accessing a <see cref="GraphicsResource"/> with the <see cref="CommandList.MapSubresource"/> method.
     /// </summary>
     public enum MapMode
     {

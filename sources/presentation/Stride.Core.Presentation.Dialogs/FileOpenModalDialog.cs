@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +26,7 @@ namespace Stride.Core.Presentation.Dialogs
         public IList<FileDialogFilter> Filters { get; set; }
 
         /// <inheritdoc/>
-        public IReadOnlyCollection<string> FilePaths { get; private set; }
+        public IReadOnlyList<string> FilePaths { get; private set; }
 
         /// <inheritdoc/>
         public string InitialDirectory { get { return OpenDlg.InitialDirectory; } set { OpenDlg.InitialDirectory = value != null ? value.Replace('/', '\\') : null; } }

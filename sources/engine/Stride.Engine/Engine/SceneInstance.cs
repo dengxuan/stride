@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -23,17 +23,17 @@ namespace Stride.Engine
     public sealed class SceneInstance : EntityManager
     {
         /// <summary>
-        /// A property key to get the current scene from the <see cref="RenderContext.Tags"/>.
+        /// A property key to get the current scene from the <see cref="ComponentBase.Tags"/>.
         /// </summary>
         public static readonly PropertyKey<SceneInstance> Current = new PropertyKey<SceneInstance>("SceneInstance.Current", typeof(SceneInstance));
 
         /// <summary>
-        /// A property key to get the current render system from the <see cref="RenderContext.Tags"/>.
+        /// A property key to get the current render system from the <see cref="ComponentBase.Tags"/>.
         /// </summary>
         public static readonly PropertyKey<RenderSystem> CurrentRenderSystem = new PropertyKey<RenderSystem>("SceneInstance.CurrentRenderSystem", typeof(SceneInstance));
 
         /// <summary>
-        /// A property key to get the current visibility group from the <see cref="RenderContext.Tags"/>.
+        /// A property key to get the current visibility group from the <see cref="ComponentBase.Tags"/>.
         /// </summary>
         public static readonly PropertyKey<VisibilityGroup> CurrentVisibilityGroup = new PropertyKey<VisibilityGroup>("SceneInstance.CurrentVisibilityGroup", typeof(SceneInstance));
 
@@ -94,13 +94,15 @@ namespace Stride.Engine
                     RemoveRendererTypes();
                 }
 
+                // set rootScene before adding entities because component processors might want to reference it
+                rootScene = value;
+
                 if (value != null)
                 {
                     Add(value);
                     HandleRendererTypes();
                 }
 
-                rootScene = value;
                 OnRootSceneChanged();
             }
         }
@@ -133,7 +135,7 @@ namespace Stride.Engine
         {
             if (scene.Entities.Count > 0)
             {
-                var entitiesToAdd = new FastList<Entity>();
+                var entitiesToAdd = new List<Entity>();
                 // Reverse order, we're adding and removing from the tail to 
                 // avoid forcing the list to move all items when removing at [0]
                 for (int i = scene.Entities.Count -1; i >= 0; i-- )
@@ -164,7 +166,7 @@ namespace Stride.Engine
 
             if (scene.Children.Count > 0)
             {
-                var scenesToAdd = new FastList<Scene>();
+                var scenesToAdd = new List<Scene>();
                 // Reverse order, we're adding and removing from the tail to 
                 // avoid forcing the list to move all items when removing at [0]
                 for (int i = scene.Children.Count - 1; i >= 0; i--)

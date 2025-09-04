@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Stride.Core;
 using Stride.Core.Annotations;
-using Stride.Core.Collections;
 using Stride.Core.Diagnostics;
 using Stride.Core.Mathematics;
 using Stride.Core.Storage;
@@ -26,6 +25,9 @@ namespace Stride.Rendering.Compositing
     [Display("Forward renderer")]
     public partial class ForwardRenderer : SceneRendererBase, ISharedRenderer
     {
+        private static readonly ProfilingKey CollectCoreKey = new ProfilingKey("ForwardRenderer.CollectCore");
+        private static readonly ProfilingKey DrawCoreKey = new ProfilingKey("ForwardRenderer.DrawCore");
+
         // TODO: should we use GraphicsDeviceManager.PreferredBackBufferFormat?
         public const PixelFormat DepthBufferFormat = PixelFormat.D24_UNorm_S8_UInt;
 
@@ -36,8 +38,8 @@ namespace Stride.Rendering.Compositing
 
         private readonly Logger logger = GlobalLogger.GetLogger(nameof(ForwardRenderer));
 
-        private readonly FastList<Texture> currentRenderTargets = new FastList<Texture>();
-        private readonly FastList<Texture> currentRenderTargetsNonMSAA = new FastList<Texture>();
+        private readonly List<Texture> currentRenderTargets = [];
+        private readonly List<Texture> currentRenderTargetsNonMSAA = [];
         private Texture currentDepthStencil;
         private Texture currentDepthStencilNonMSAA;
 
@@ -118,6 +120,12 @@ namespace Stride.Rendering.Compositing
         [DefaultValue(true)]
         public bool BindDepthAsResourceDuringTransparentRendering { get; set; } = true;
 
+        /// <summary>
+        /// If true, render target generated during <see cref="OpaqueRenderStage"/> will be available as a shader resource named OpaqueBase.OpaqueRenderTarget during <see cref="TransparentRenderStage"/>.
+        /// </summary>
+        [DefaultValue(false)]
+        public bool BindOpaqueAsResourceDuringTransparentRendering { get; set; }
+
         protected override void InitializeCore()
         {
             base.InitializeCore();
@@ -176,6 +184,7 @@ namespace Stride.Rendering.Compositing
                     vrSystem.RequireMirror = VRSettings.CopyMirror;
                     vrSystem.MirrorWidth = GraphicsDevice.Presenter.BackBuffer.Width;
                     vrSystem.MirrorHeight = GraphicsDevice.Presenter.BackBuffer.Height;
+                    vrSystem.RequestPassthrough = VRSettings.RequestPassthrough;
 
                     vrSystem.Enabled = true; //careful this will trigger the whole chain of initialization!
                     vrSystem.Visible = true;
@@ -287,6 +296,8 @@ namespace Stride.Rendering.Compositing
 
         protected override unsafe void CollectCore(RenderContext context)
         {
+            using var _ = Profiler.Begin(CollectCoreKey);
+
             var camera = context.GetCurrentCamera();
 
             if (context.RenderView == null)
@@ -460,7 +471,17 @@ namespace Stride.Rendering.Compositing
         private void ResolveMSAA(RenderDrawContext drawContext)
         {
             // Resolve render targets
-            currentRenderTargetsNonMSAA.Resize(currentRenderTargets.Count, false);
+            if (currentRenderTargetsNonMSAA.Count < currentRenderTargets.Count)
+            {
+                currentRenderTargetsNonMSAA.EnsureCapacity(currentRenderTargets.Count);
+                while (currentRenderTargetsNonMSAA.Count != currentRenderTargets.Count)
+                    currentRenderTargetsNonMSAA.Add(null);
+            }
+            else if (currentRenderTargetsNonMSAA.Count > currentRenderTargets.Count)
+            {
+                currentRenderTargetsNonMSAA.RemoveRange(currentRenderTargets.Count, currentRenderTargetsNonMSAA.Count - currentRenderTargets.Count);
+            }
+
             for (int index = 0; index < currentRenderTargets.Count; index++)
             {
                 var input = currentRenderTargets[index];
@@ -546,7 +567,11 @@ namespace Stride.Rendering.Compositing
                         if (depthStencilSRV == null)
                             depthStencilSRV = ResolveDepthAsSRV(drawContext);
 
+                        var renderTargetSRV = ResolveRenderTargetAsSRV(drawContext);
+
                         renderSystem.Draw(drawContext, context.RenderView, TransparentRenderStage);
+
+                        Context.Allocator.ReleaseReference(renderTargetSRV);
                     }
                 }
 
@@ -581,7 +606,7 @@ namespace Stride.Rendering.Compositing
                 {
                     // Run post effects
                     // Note: OpaqueRenderStage can't be null otherwise colorTargetIndex would be -1
-                    PostEffects.Draw(drawContext, OpaqueRenderStage.OutputValidator, renderTargets.Items, depthStencil, viewOutputTarget);
+                    PostEffects.Draw(drawContext, OpaqueRenderStage.OutputValidator, CollectionsMarshal.AsSpan(renderTargets), depthStencil, viewOutputTarget);
                 }
                 else
                 {
@@ -604,6 +629,8 @@ namespace Stride.Rendering.Compositing
 
         protected override void DrawCore(RenderContext context, RenderDrawContext drawContext)
         {
+            using var _ = Profiler.Begin(DrawCoreKey);
+
             var viewport = drawContext.CommandList.Viewport;
 
             using (drawContext.PushRenderTargetsAndRestore())
@@ -669,7 +696,7 @@ namespace Stride.Rendering.Compositing
                                     }
                                 }
 
-                                drawContext.CommandList.SetRenderTargets(currentDepthStencil, currentRenderTargets.Count, currentRenderTargets.Items);
+                                drawContext.CommandList.SetRenderTargets(currentDepthStencil, currentRenderTargets.Count, CollectionsMarshal.AsSpan(currentRenderTargets));
 
                                 if (!hasPostEffects && !isWindowsMixedReality) // need to change the viewport between each eye
                                 {
@@ -714,10 +741,6 @@ namespace Stride.Rendering.Compositing
                     //draw mirror to backbuffer (if size is matching and full viewport)
                     if (VRSettings.CopyMirror)
                     {
-                        CopyOrScaleTexture(drawContext, VRSettings.VRDevice.MirrorTexture, drawContext.CommandList.RenderTarget);
-                    }
-                    else if (hasPostEffects)
-                    {
                         CopyOrScaleTexture(drawContext, vrFullSurface, drawContext.CommandList.RenderTarget);
                     }
                 }
@@ -732,7 +755,7 @@ namespace Stride.Rendering.Compositing
 
                     using (drawContext.PushRenderTargetsAndRestore())
                     {
-                        drawContext.CommandList.SetRenderTargets(currentDepthStencil, currentRenderTargets.Count, currentRenderTargets.Items);
+                        drawContext.CommandList.SetRenderTargets(currentDepthStencil, currentRenderTargets.Count, CollectionsMarshal.AsSpan(currentRenderTargets));
 
                         // Clear render target and depth stencil
                         Clear?.Draw(drawContext);
@@ -775,32 +798,48 @@ namespace Stride.Rendering.Compositing
 
             foreach (var renderFeature in context.RenderContext.RenderSystem.RenderFeatures)
             {
-                if (!(renderFeature is RootEffectRenderFeature))
-                    continue;
-
-                var depthLogicalKey = ((RootEffectRenderFeature)renderFeature).CreateViewLogicalGroup("Depth");
-                var viewFeature = renderView.Features[renderFeature.Index];
-
-                // Copy ViewProjection to PerFrame cbuffer
-                foreach (var viewLayout in viewFeature.Layouts)
+                if (renderFeature is RootRenderFeature rootRenderFeature)
                 {
-                    var resourceGroup = viewLayout.Entries[renderView.Index].Resources;
-
-                    var depthLogicalGroup = viewLayout.GetLogicalGroup(depthLogicalKey);
-                    if (depthLogicalGroup.Hash == ObjectId.Empty)
-                        continue;
-
-                    // Might want to use ProcessLogicalGroup if more than 1 Recource
-                    resourceGroup.DescriptorSet.SetShaderResourceView(depthLogicalGroup.DescriptorSlotStart, depthStencilSRV);
+                    rootRenderFeature.BindPerViewShaderResource("Depth", renderView, depthStencilSRV);
                 }
             }
 
             context.CommandList.SetRenderTargets(null, context.CommandList.RenderTargetCount, context.CommandList.RenderTargets);
 
-            depthStencilROCached = context.Resolver.GetDepthStencilAsRenderTarget(depthStencil, depthStencilROCached);
+            var depthStencilROCached = context.Resolver.GetDepthStencilAsRenderTarget(depthStencil, this.depthStencilROCached);
+            if (depthStencilROCached != this.depthStencilROCached)
+            {
+                // Dispose cached view
+                this.depthStencilROCached?.Dispose();
+                this.depthStencilROCached = depthStencilROCached;
+            }
             context.CommandList.SetRenderTargets(depthStencilROCached, context.CommandList.RenderTargetCount, context.CommandList.RenderTargets);
 
             return depthStencilSRV;
+        }
+
+        private Texture ResolveRenderTargetAsSRV(RenderDrawContext drawContext)
+        {
+            if (!BindOpaqueAsResourceDuringTransparentRendering)
+                return null;
+
+            // Create temporary texture and blit active render target to it
+            var renderTarget = drawContext.CommandList.RenderTargets[0];
+            var renderTargetTexture = Context.Allocator.GetTemporaryTexture2D(renderTarget.Description);
+
+            drawContext.CommandList.Copy(renderTarget, renderTargetTexture);
+
+            // Bind texture as srv in PerView.Opaque
+            var renderView = drawContext.RenderContext.RenderView;
+            foreach (var renderFeature in drawContext.RenderContext.RenderSystem.RenderFeatures)
+            {
+                if (renderFeature is RootRenderFeature rootRenderFeature)
+                {
+                    rootRenderFeature.BindPerViewShaderResource("Opaque", renderView, renderTargetTexture);
+                }
+            }
+
+            return renderTargetTexture;
         }
 
         private void PrepareRenderTargets(RenderDrawContext drawContext, Texture outputRenderTarget, Texture outputDepthStencil)
@@ -810,7 +849,16 @@ namespace Stride.Rendering.Compositing
 
             var renderTargets = OpaqueRenderStage.OutputValidator.RenderTargets;
 
-            currentRenderTargets.Resize(renderTargets.Count, false);
+            if (currentRenderTargets.Count < renderTargets.Count)
+            {
+                currentRenderTargets.EnsureCapacity(renderTargets.Count);
+                while (currentRenderTargets.Count != renderTargets.Count)
+                    currentRenderTargets.Add(null);
+            }
+            else if (currentRenderTargets.Count > renderTargets.Count)
+            {
+                currentRenderTargets.RemoveRange(renderTargets.Count, currentRenderTargets.Count - renderTargets.Count);
+            }
 
             for (int index = 0; index < renderTargets.Count; index++)
             {
@@ -876,6 +924,7 @@ namespace Stride.Rendering.Compositing
         protected override void Destroy()
         {
             PostEffects?.Dispose();
+            depthStencilROCached?.Dispose();
         }
 
         [StructLayout(LayoutKind.Sequential)]

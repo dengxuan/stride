@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Stride.Core;
@@ -9,7 +9,7 @@ using Stride.Rendering.Skyboxes;
 namespace Stride.Rendering.Lights
 {
     /// <summary>
-    /// A light coming from a skybox. The <see cref="SkyboxComponent"/> must be set on the entity in order to see a skybox. 
+    /// A light coming from a skybox. The `BackgroundComponent` must be set on the entity in order to see a skybox.
     /// </summary>
     [DataContract("LightSkybox")]
     [Display("Skybox")]

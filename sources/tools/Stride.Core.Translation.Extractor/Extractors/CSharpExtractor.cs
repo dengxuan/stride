@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -55,7 +55,7 @@ namespace Stride.Core.Translation.Extractor
         {
             var lineNumberLookup = new LineNumberLookup();
             // Read all content
-            var content = File.ReadAllText(file.ToWindowsPath());
+            var content = File.ReadAllText(file.ToOSPath());
             // Remove comments
             content = RemoveComments(content);
             // Read content again to build the line number lookup
@@ -97,9 +97,9 @@ namespace Stride.Core.Translation.Extractor
                 // Note: we need to match literal strings to exclude false positives: they might contain comment characters.
                 return Regex.Replace(str, $"{blockPattern}|{linePattern}|{CSharpStringPattern}", m =>
                     {
-                        if (m.Value.StartsWith("/*") || m.Value.StartsWith("//"))
+                        if (m.Value.StartsWith("/*", StringComparison.Ordinal) || m.Value.StartsWith("//", StringComparison.Ordinal))
                         {
-                            if (m.Value.StartsWith("//"))
+                            if (m.Value.StartsWith("//", StringComparison.Ordinal))
                                 return Environment.NewLine;
                             var count = m.Groups[1].Captures.Count + 1;
                             return string.Concat(Enumerable.Repeat(Environment.NewLine, count));
@@ -179,7 +179,7 @@ namespace Stride.Core.Translation.Extractor
 
             string Unescape(string str)
             {
-                return str.StartsWith("@") ? str.Trim(@"@""".ToCharArray()) : Regex.Unescape(str.Trim(@"@""".ToCharArray()));
+                return str.StartsWith('@') ? str.Trim(@"@""".ToCharArray()) : Regex.Unescape(str.Trim(@"@""".ToCharArray()));
             }
         }
 

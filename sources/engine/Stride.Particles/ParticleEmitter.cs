@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -380,7 +380,7 @@ namespace Stride.Particles
         public readonly FastTrackingCollection<ParticleSpawner> Spawners;
 
         /// <summary>
-        /// List of <see cref="ParticleInitializer"/> within thie <see cref="ParticleEmitter"/>. Adjust <see cref="requiredFields"/> automatically
+        /// List of <see cref="ParticleInitializer"/> within this <see cref="ParticleEmitter"/>. Adjusts the required fields automatically.
         /// </summary>
         /// <userdoc>
         /// Initializers set initial values for fields of particles which just spawned. Have no effect on already-spawned particles.
@@ -391,7 +391,7 @@ namespace Stride.Particles
         public readonly FastTrackingCollection<ParticleInitializer> Initializers;
 
         /// <summary>
-        /// List of <see cref="ParticleUpdater"/> within thie <see cref="ParticleEmitter"/>. Adjust <see cref="requiredFields"/> automatically
+        /// List of <see cref="ParticleUpdater"/> within this <see cref="ParticleEmitter"/>. Adjusts the required fields automatically.
         /// </summary>
         /// <userdoc>
         /// Updaters change the fields of all living particles every frame, like position, velocity, color, size etc.

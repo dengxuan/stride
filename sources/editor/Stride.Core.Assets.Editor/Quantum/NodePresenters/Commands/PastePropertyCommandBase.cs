@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections;
@@ -7,7 +7,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Stride.Core.Assets.Editor.Services;
 using Stride.Core.Assets.Editor.ViewModel.CopyPasteProcessors;
-using Stride.Core;
 using Stride.Core.Annotations;
 using Stride.Core.Reflection;
 using Stride.Core.Presentation.Interop;

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -134,7 +134,7 @@ namespace Stride.Assets.Rendering
                 YamlNode assetNode = asset.Node;
                 foreach (var node in assetNode.AllNodes)
                 {
-                    if (node.Tag != null && node.Tag.EndsWith(",Stride.Engine")
+                    if (node.Tag != null && node.Tag.EndsWith(",Stride.Engine", StringComparison.Ordinal)
                         // Several types are still in Stride.Engine
                         && node.Tag != "!Stride.Rendering.Compositing.ForwardRenderer,Stride.Engine"
                         && node.Tag != "!Stride.Rendering.Compositing.SceneCameraRenderer,Stride.Engine")

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using Stride.Core.IO;
 using Stride.Core.Mathematics;
@@ -325,7 +325,7 @@ namespace Stride.SpriteStudio.Offline
             var nameSpace = xmlDoc.Root.Name.Namespace;
 
             var cellMaps = xmlDoc.Descendants(nameSpace + "cellmapNames").Descendants(nameSpace + "value").ToList();
-            return cellMaps.Select(cellMap => UPath.Combine(file.GetFullDirectory(), new UFile(cellMap.Value))).All(fileName => File.Exists(fileName.ToWindowsPath()));
+            return cellMaps.Select(cellMap => UPath.Combine(file.GetFullDirectory(), new UFile(cellMap.Value))).All(fileName => File.Exists(fileName.ToOSPath()));
         }
     }
 }

@@ -1,15 +1,14 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #if STRIDE_GRAPHICS_API_VULKAN
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
 using Vortice.Vulkan;
 using static Vortice.Vulkan.Vulkan;
 using Stride.Core;
 using Stride.Core.Diagnostics;
+using System.Text;
 
 namespace Stride.Graphics
 {
@@ -83,7 +82,6 @@ namespace Stride.Graphics
     internal class GraphicsAdapterFactoryInstance : IDisposable
     {
         private VkDebugUtilsMessengerEXT debugReportCallback;
-        private vkDebugUtilsMessengerCallbackEXT debugReport;
 
         internal VkInstance NativeInstance;
         internal bool HasXlibSurfaceSupport;
@@ -93,159 +91,188 @@ namespace Stride.Graphics
 
         public unsafe GraphicsAdapterFactoryInstance(bool enableValidation)
         {
+            var pEngineName = new VkUtf8ReadOnlyString("Stride"u8);
             var applicationInfo = new VkApplicationInfo
             {
-                sType = VkStructureType.ApplicationInfo,
-                apiVersion = new VkVersion(1, 0, 0),
-                pEngineName = (byte*)Marshal.StringToHGlobalAnsi("Stride"),
-                //engineVersion = new VkVersion()
+                pEngineName = pEngineName,
+                apiVersion = new VkVersion(1, 4, 304)
             };
 
-            var validationLayerNames = new[]
+            Span<VkUtf8String> validationLayerNames = stackalloc VkUtf8String[]
             {
-                "VK_LAYER_KHRONOS_validation",
+                VK_LAYER_KHRONOS_VALIDATION_EXTENSION_NAME,
             };
-
-            IntPtr[] enabledLayerNames = new IntPtr[0];
+            var enabledLayerNames = new List<VkUtf8String>();
 
             if (enableValidation)
             {
                 var layers = vkEnumerateInstanceLayerProperties();
-                var availableLayerNames = new HashSet<string>();
 
                 for (int index = 0; index < layers.Length; index++)
                 {
                     var properties = layers[index];
-                    var namePointer = properties.layerName;
-                    var name = Marshal.PtrToStringAnsi((IntPtr)namePointer);
+                    var name = new VkUtf8String(properties.layerName);
+                    var indexOfLayerName = validationLayerNames.IndexOf(name);
 
-                    availableLayerNames.Add(name);
+                    if (indexOfLayerName >= 0)
+                        enabledLayerNames.Add(validationLayerNames[indexOfLayerName]);
                 }
-
-                enabledLayerNames = validationLayerNames
-                    .Where(x => availableLayerNames.Contains(x))
-                    .Select(Marshal.StringToHGlobalAnsi).ToArray();
 
                 // Check if validation was really available
-                enableValidation = enabledLayerNames.Length > 0;
+                enableValidation = enabledLayerNames.Count > 0;
             }
 
-            var extensionProperties = vkEnumerateInstanceExtensionProperties();
-            var availableExtensionNames = new List<string>();
-            var desiredExtensionNames = new List<string>();
+            var supportedExtensionNames = stackalloc VkUtf8String[]
+            {
+                VK_KHR_SURFACE_EXTENSION_NAME,
+                VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+                VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
+                VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
+                VK_KHR_XCB_SURFACE_EXTENSION_NAME,
+                VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+            };
+            var supportedExtensions = new Span<VkUtf8String>(supportedExtensionNames, 6);
+            var availableExtensionNames = GetAvailableExtensionNames(supportedExtensions);
+            ValidateSurfaceExtensionNamesAvailability(availableExtensionNames);
+            var desiredExtensionNames = new HashSet<VkUtf8String>
+            {
+                VK_KHR_SURFACE_EXTENSION_NAME,
+                GetPlatformRelatedSurfaceExtensionName(availableExtensionNames)
+            };
 
-            for (int index = 0; index < extensionProperties.Length; index++)
-            {
-                var extensionProperty = extensionProperties[index];
-                var name = Marshal.PtrToStringAnsi((IntPtr)extensionProperty.extensionName);
-                availableExtensionNames.Add(name);
-            }
+            HasXlibSurfaceSupport = desiredExtensionNames.Contains(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
 
-            desiredExtensionNames.Add(KHRSurfaceExtensionName);
-            if (!availableExtensionNames.Contains(KHRSurfaceExtensionName))
-                throw new InvalidOperationException($"Required extension {KHRSurfaceExtensionName} is not available");
-
-#if STRIDE_PLATFORM_WINDOWS_DESKTOP
-            desiredExtensionNames.Add(KHRWin32SurfaceExtensionName);
-            if (!availableExtensionNames.Contains(KHRWin32SurfaceExtensionName))
-                throw new InvalidOperationException($"Required extension {KHRWin32SurfaceExtensionName} is not available");
-#elif STRIDE_PLATFORM_ANDROID
-            desiredExtensionNames.Add(KHRAndroidSurfaceExtensionName);
-            if (!availableExtensionNames.Contains(KHRAndroidSurfaceExtensionName))
-                throw new InvalidOperationException($"Required extension {KHRAndroidSurfaceExtensionName} is not available");
-#elif STRIDE_PLATFORM_LINUX
-            if (availableExtensionNames.Contains("VK_KHR_xlib_surface"))
-            {
-                desiredExtensionNames.Add("VK_KHR_xlib_surface");
-                HasXlibSurfaceSupport = true;
-            }
-            else if (availableExtensionNames.Contains("VK_KHR_xcb_surface"))
-            {
-                desiredExtensionNames.Add("VK_KHR_xcb_surface");
-            }
-            else
-            {
-                throw new InvalidOperationException("None of the supported surface extensions VK_KHR_xcb_surface or VK_KHR_xlib_surface is available");
-            }
-#endif
-            bool enableDebugReport = enableValidation && availableExtensionNames.Contains(EXTDebugUtilsExtensionName);
+            bool enableDebugReport = enableValidation && availableExtensionNames.Contains(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
             if (enableDebugReport)
-                desiredExtensionNames.Add(EXTDebugUtilsExtensionName);
+                desiredExtensionNames.Add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
-            var enabledExtensionNames = desiredExtensionNames.Select(Marshal.StringToHGlobalAnsi).ToArray();
+            using VkStringArray ppEnabledLayerNames = new(enabledLayerNames);
+            using VkStringArray ppEnabledExtensionNames = new(desiredExtensionNames);
 
-            try
+            var instanceCreateInfo = new VkInstanceCreateInfo
             {
-                fixed (void* enabledExtensionNamesPointer = &enabledExtensionNames[0])
-                {
-                    var instanceCreateInfo = new VkInstanceCreateInfo
-                    {
-                        sType = VkStructureType.InstanceCreateInfo,
-                        pApplicationInfo = &applicationInfo,
-                        enabledLayerCount = enabledLayerNames != null ? (uint)enabledLayerNames.Length : 0,
-                        ppEnabledLayerNames = enabledLayerNames?.Length > 0 ? (byte**)Core.Interop.Fixed(enabledLayerNames) : null,
-                        enabledExtensionCount = (uint)enabledExtensionNames.Length,
-                        ppEnabledExtensionNames = (byte**)enabledExtensionNamesPointer,
-                    };
+                sType = VkStructureType.InstanceCreateInfo,
+                pApplicationInfo = &applicationInfo,
+                enabledLayerCount = ppEnabledLayerNames.Length,
+                ppEnabledLayerNames = ppEnabledLayerNames,
+                enabledExtensionCount = ppEnabledExtensionNames.Length,
+                ppEnabledExtensionNames = ppEnabledExtensionNames,
+            };
 
-                    vkCreateInstance(&instanceCreateInfo, null, out NativeInstance);
-                    vkLoadInstance(NativeInstance);
-                }
+            vkCreateInstance(&instanceCreateInfo, null, out NativeInstance);
+            vkLoadInstance(NativeInstance);
 
-                // Check if validation layer was available (otherwise detected count is 0)
-                if (enableValidation)
-                {
-                    debugReport = DebugReport;
-                    var createInfo = new VkDebugUtilsMessengerCreateInfoEXT
-                    {
-                        sType = VkStructureType.DebugUtilsMessengerCreateInfoEXT,
-                        messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.VerboseEXT | VkDebugUtilsMessageSeverityFlagsEXT.ErrorEXT | VkDebugUtilsMessageSeverityFlagsEXT.WarningEXT,
-                        messageType = VkDebugUtilsMessageTypeFlagsEXT.GeneralEXT | VkDebugUtilsMessageTypeFlagsEXT.ValidationEXT | VkDebugUtilsMessageTypeFlagsEXT.PerformanceEXT,
-                        pfnUserCallback = Marshal.GetFunctionPointerForDelegate(debugReport)
-                    };
-
-                    vkCreateDebugUtilsMessengerEXT(NativeInstance, &createInfo, null, out debugReportCallback).CheckResult();
-                }
-            }
-            finally
+            // Check if validation layer was available (otherwise detected count is 0)
+            if (enableValidation)
             {
-                foreach (var enabledExtensionName in enabledExtensionNames)
+                var createInfo = new VkDebugUtilsMessengerCreateInfoEXT
                 {
-                    Marshal.FreeHGlobal(enabledExtensionName);
-                }
+                    sType = VkStructureType.DebugUtilsMessengerCreateInfoEXT,
+                    messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.Verbose | VkDebugUtilsMessageSeverityFlagsEXT.Error | VkDebugUtilsMessageSeverityFlagsEXT.Warning,
+                    messageType = VkDebugUtilsMessageTypeFlagsEXT.General | VkDebugUtilsMessageTypeFlagsEXT.Validation | VkDebugUtilsMessageTypeFlagsEXT.Performance,
+                    pfnUserCallback = &DebugReport
+                };
 
-                foreach (var enabledLayerName in enabledLayerNames)
-                {
-                    Marshal.FreeHGlobal(enabledLayerName);
-                }
-
-                Marshal.FreeHGlobal((IntPtr)applicationInfo.pEngineName);
+                vkCreateDebugUtilsMessengerEXT(NativeInstance, &createInfo, null, out debugReportCallback).CheckResult();
             }
         }
 
-        private unsafe static VkBool32 DebugReport(VkDebugUtilsMessageSeverityFlagsEXT severity, VkDebugUtilsMessageTypeFlagsEXT types, VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, IntPtr userData)
+        private unsafe static HashSet<VkUtf8String> GetAvailableExtensionNames(Span<VkUtf8String> supportedExtensionNames)
         {
-            var message = Vortice.Vulkan.Interop.GetString(pCallbackData->pMessage);
+            var availableExtensionNames = new HashSet<VkUtf8String>();
+            vkEnumerateInstanceExtensionProperties(out uint extensionCount).CheckResult();
+            var extensionProperties = new VkExtensionProperties[extensionCount];
+            vkEnumerateInstanceExtensionProperties(extensionProperties).CheckResult();
+
+            for (int index = 0; index < extensionCount; index++)
+            {
+                var extensionProperty = extensionProperties[index];
+                var name = new VkUtf8String(extensionProperty.extensionName).Span;
+                var indexOfExtensionName = supportedExtensionNames.IndexOf(name);
+
+                if (indexOfExtensionName >= 0)
+                    availableExtensionNames.Add(supportedExtensionNames[indexOfExtensionName]);
+            }
+
+            return availableExtensionNames;
+        }
+
+        private static void ValidateSurfaceExtensionNamesAvailability(HashSet<VkUtf8String> availableExtensionNames)
+        {
+            if (!availableExtensionNames.Contains(VK_KHR_SURFACE_EXTENSION_NAME))
+                throw new InvalidOperationException($"Required extension {Encoding.UTF8.GetString(VK_KHR_SURFACE_EXTENSION_NAME)} is not available");
+
+            if (Platform.Type == PlatformType.Windows)
+            {
+                if (!availableExtensionNames.Contains(VK_KHR_WIN32_SURFACE_EXTENSION_NAME))
+                    throw new InvalidOperationException($"Required extension {Encoding.UTF8.GetString(VK_KHR_WIN32_SURFACE_EXTENSION_NAME)} is not available");
+            }
+            else if (Platform.Type == PlatformType.Android)
+            {
+                if (!availableExtensionNames.Contains(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME))
+                    throw new InvalidOperationException($"Required extension {Encoding.UTF8.GetString(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME)} is not available");
+            }
+            else if (Platform.Type == PlatformType.Linux)
+            {
+                if (!availableExtensionNames.Contains(VK_KHR_XLIB_SURFACE_EXTENSION_NAME)
+                    && !availableExtensionNames.Contains(VK_KHR_XCB_SURFACE_EXTENSION_NAME))
+                {
+                    throw new InvalidOperationException("None of the supported surface extensions VK_KHR_xcb_surface or VK_KHR_xlib_surface is available");
+                }
+            }
+        }
+
+        private static VkUtf8String GetPlatformRelatedSurfaceExtensionName(HashSet<VkUtf8String> availableExtensionNames)
+        {
+            VkUtf8String surfaceExtensionName = VK_KHR_SURFACE_EXTENSION_NAME;
+
+            if (Platform.Type == PlatformType.Windows)
+            {
+                surfaceExtensionName = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+            }
+            else if (Platform.Type == PlatformType.Android)
+            {
+                surfaceExtensionName = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
+            }
+            else if (Platform.Type == PlatformType.Linux)
+            {
+                if (availableExtensionNames.Contains(VK_KHR_XLIB_SURFACE_EXTENSION_NAME))
+                {
+                    surfaceExtensionName = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+                }
+                else if (availableExtensionNames.Contains(VK_KHR_XCB_SURFACE_EXTENSION_NAME))
+                {
+                    surfaceExtensionName = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
+                }
+            }
+
+            return surfaceExtensionName;
+        }
+
+        [UnmanagedCallersOnly]
+        private unsafe static uint DebugReport(VkDebugUtilsMessageSeverityFlagsEXT severity, VkDebugUtilsMessageTypeFlagsEXT types, VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* userData)
+        {
+            var message = new VkUtf8String(pCallbackData->pMessage).ToString();
 
             // Redirect to log
-            if (severity == VkDebugUtilsMessageSeverityFlagsEXT.ErrorEXT)
+            if (severity == VkDebugUtilsMessageSeverityFlagsEXT.Error)
             {
                 Log.Error(message);
             }
-            else if (severity == VkDebugUtilsMessageSeverityFlagsEXT.WarningEXT)
+            else if (severity == VkDebugUtilsMessageSeverityFlagsEXT.Warning)
             {
                 Log.Warning(message);
             }
-            else if (severity == VkDebugUtilsMessageSeverityFlagsEXT.InfoEXT)
+            else if (severity == VkDebugUtilsMessageSeverityFlagsEXT.Info)
             {
                 Log.Info(message);
             }
-            else if (severity == VkDebugUtilsMessageSeverityFlagsEXT.VerboseEXT)
+            else if (severity == VkDebugUtilsMessageSeverityFlagsEXT.Verbose)
             {
                 Log.Verbose(message);
             }
 
-            return false;
+            return VK_FALSE;
         }
 
         public unsafe void Dispose()

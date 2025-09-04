@@ -1,9 +1,10 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #pragma warning disable SA1402 // File may only contain a single class
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Stride.Core;
 using Stride.Core.Collections;
 using Stride.Internals;
@@ -65,7 +66,7 @@ namespace Stride.Animations
         }
 
         /// <summary>
-        /// Shifts all animation keys by the specified time, adding it to all <see cref="KeyFrameData.Time"/>
+        /// Shifts all animation keys by the specified time, adding it to all <see cref="KeyFrameData{T}.Time" />
         /// </summary>
         /// <param name="shiftTimeSpan">The time span by which the keys should be shifted</param>
         public virtual void ShiftKeys(CompressedTimeSpan shiftTimeSpan) { }
@@ -84,7 +85,7 @@ namespace Stride.Animations
         /// <value>
         /// The key frames.
         /// </value>
-        public FastList<KeyFrameData<T>> KeyFrames { get; set; }
+        public List<KeyFrameData<T>> KeyFrames { get; set; }
 
         /// <inheritdoc/>
         [DataMemberIgnore]
@@ -95,10 +96,7 @@ namespace Stride.Animations
 
         /// <inheritdoc/>
         [DataMemberIgnore]
-        public override int ElementSize
-        {
-            get { return Utilities.UnsafeSizeOf<T>(); }
-        }
+        public override int ElementSize => Unsafe.SizeOf<T>();
 
         /// <inheritdoc/>
         [DataMemberIgnore]
@@ -109,7 +107,7 @@ namespace Stride.Animations
 
         public AnimationCurve()
         {
-            KeyFrames = new FastList<KeyFrameData<T>>();
+            KeyFrames = [];
         }
 
         /// <summary>
@@ -144,11 +142,10 @@ namespace Stride.Animations
         }
 
         /// <inheritdoc/>
-        public override void AddValue(CompressedTimeSpan newTime, IntPtr location)
+        public override unsafe void AddValue(CompressedTimeSpan newTime, nint location)
         {
-            T value;
-            Utilities.UnsafeReadOut(location, out value);
-            KeyFrames.Add(new KeyFrameData<T> { Time = (CompressedTimeSpan)newTime, Value = value });
+            var value = Unsafe.ReadUnaligned<T>((void*)location);
+            KeyFrames.Add(new(newTime, value));
         }
 
         /// <inheritdoc/>
@@ -160,7 +157,7 @@ namespace Stride.Animations
         /// <inheritdoc/>
         public override void ShiftKeys(CompressedTimeSpan shiftTimeSpan)
         {
-            var shiftedKeyFrames = new FastList<KeyFrameData<T>>();
+            var shiftedKeyFrames = new List<KeyFrameData<T>>();
 
             foreach (var keyFrameData in KeyFrames)
             {

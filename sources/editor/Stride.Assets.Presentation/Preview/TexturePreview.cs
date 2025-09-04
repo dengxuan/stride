@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -9,8 +9,8 @@ using StrideEffects;
 using Stride.Core.BuildEngine;
 using Stride.Core.Mathematics;
 using Stride.Core.Serialization.Contents;
-using Stride.Assets.Presentation.Preview.Views;
 using Stride.Assets.Textures;
+using Stride.Editor.Annotations;
 using Stride.Editor.Preview;
 using Stride.Rendering;
 using Stride.Graphics;
@@ -20,7 +20,7 @@ namespace Stride.Assets.Presentation.Preview
     /// <summary>
     /// An implementation of the <see cref="AssetPreview"/> that can preview textures.
     /// </summary>
-    [AssetPreview(typeof(TextureAsset), typeof(TexturePreviewView))]
+    [AssetPreview<TextureAsset>]
     public class TexturePreview : PreviewFromSpriteBatch<TextureAsset>
     {
         private readonly Dictionary<TextureCubePreviewMode, Texture> textureCubeViews = new Dictionary<TextureCubePreviewMode, Texture>();

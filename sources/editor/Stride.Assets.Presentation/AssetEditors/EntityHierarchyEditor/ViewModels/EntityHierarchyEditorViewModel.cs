@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -81,6 +81,8 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.ViewMode
             UpdateCommands();
             debugPage = new DebugEntityHierarchyEditorUserControl(this);
             EditorDebugTools.RegisterDebugPage(debugPage);
+
+            DependentProperties.Add(nameof(RootPart), [nameof(HierarchyRoot)]);
         }
 
         public EntityHierarchyRootViewModel ActiveRoot { get => activeRoot; protected internal set => SetValue(ref activeRoot, value); }
@@ -151,12 +153,10 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.ViewMode
         [NotNull]
         public ICommandBase CreatePrefabFromSelectionCommand { get; }
 
-        [NotNull]
-        protected new EntityHierarchyViewModel Asset => (EntityHierarchyViewModel)base.Asset;
+        public override EntityHierarchyViewModel Asset => (EntityHierarchyViewModel)base.Asset;
 
         // TODO: turn private, create a service getter that accepts only IEditorGameViewModelService
-        [NotNull]
-        protected internal new EntityHierarchyEditorController Controller => (EntityHierarchyEditorController)base.Controller;
+        protected internal override EntityHierarchyEditorController Controller => (EntityHierarchyEditorController)base.Controller;
 
         private IEditorGameMaterialHighlightViewModelService MaterialHighlight => Controller.GetService<IEditorGameMaterialHighlightViewModelService>();
 
@@ -313,8 +313,7 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.ViewMode
             Transform.LoadSettings(settings);
             EntityGizmos.LoadSettings(settings);
             DisplaySelectionMask = settings.SelectionMaskVisible;
-            Grid.IsVisible = settings.GridVisible;
-            Grid.Color = settings.GridColor;
+            Grid.LoadSettings(settings);
             Lighting.LightProbeWireframeVisible = settings.LightProbeWireframe;
             Lighting.LightProbeBounces = settings.LightProbeBounces;
             MaterialSelectionMode = false;
@@ -327,8 +326,7 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.ViewMode
             Camera.SaveSettings(settings);
             Transform.SaveSettings(settings);
             settings.SelectionMaskVisible = DisplaySelectionMask;
-            settings.GridVisible = Grid.IsVisible;
-            settings.GridColor = Grid.Color;
+            Grid.SaveSettings(settings);
             settings.LightProbeWireframe = Lighting.LightProbeWireframeVisible;
             settings.LightProbeBounces = Lighting.LightProbeBounces;
             Navigation.SaveSettings(settings);
@@ -498,7 +496,7 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.ViewMode
                     confirmMessage = string.Format(Tr._p("Message", "Are you sure you want to delete these {0} entities?"), entitiesToDelete.Count);
                 var checkedMessage = string.Format(Stride.Core.Assets.Editor.Settings.EditorSettings.AlwaysDeleteWithoutAsking, "entities");
                 var buttons = DialogHelper.CreateButtons(new[] { Tr._p("Button", "Delete"), Tr._p("Button", "Cancel") }, 1, 2);
-                var result = await ServiceProvider.Get<IDialogService>().CheckedMessageBox(confirmMessage, false, checkedMessage, buttons, MessageBoxImage.Question);
+                var result = await ServiceProvider.Get<IDialogService>().CheckedMessageBoxAsync(confirmMessage, false, checkedMessage, buttons, MessageBoxImage.Question);
                 if (result.Result != 1)
                     return;
                 if (result.IsChecked == true)
@@ -695,7 +693,7 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.ViewMode
             var prefabs = new HashSet<PrefabViewModel>(SelectedItems.Select(x => x.SourcePrefab).NotNull());
             foreach (var prefab in prefabs)
             {
-                ServiceProvider.Get<IEditorDialogService>().AssetEditorsManager.OpenAssetEditorWindow(prefab);
+                ServiceProvider.Get<IAssetEditorsManager>().OpenAssetEditorWindow(prefab);
             }
         }
 

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -80,8 +80,7 @@ namespace Stride.Assets.Presentation.AssetEditors.AssetCompositeGameEditor.ViewM
         [NotNull]
         public ICommandBase PasteCommand { get; }
 
-        [NotNull]
-        protected new AssetCompositeHierarchyViewModel<TAssetPartDesign, TAssetPart> Asset => (AssetCompositeHierarchyViewModel<TAssetPartDesign, TAssetPart>)base.Asset;
+        public override AssetCompositeHierarchyViewModel<TAssetPartDesign, TAssetPart> Asset => (AssetCompositeHierarchyViewModel<TAssetPartDesign, TAssetPart>)base.Asset;
 
         [NotNull]
         protected FuncClipboardMonitor<bool> PasteAsRootMonitor { get; } = new FuncClipboardMonitor<bool>();
@@ -139,7 +138,7 @@ namespace Stride.Assets.Presentation.AssetEditors.AssetCompositeGameEditor.ViewM
         {
             if (RootPart is IEditorGamePartViewModel item && id == item.Id)
                 return item;
-            
+
             return RootPart?.EnumerateChildren().BreadthFirst(x => x.EnumerateChildren()).FirstOrDefault(part => part is IEditorGamePartViewModel viewModel && viewModel.Id == id) as IEditorGamePartViewModel;
         }
 
@@ -456,7 +455,7 @@ namespace Stride.Assets.Presentation.AssetEditors.AssetCompositeGameEditor.ViewM
 
                 if (!CanPasteIntoItem(pasteResult, item, out string error))
                 {
-                    await ServiceProvider.Get<IEditorDialogService>().MessageBox(error, MessageBoxButton.OK, MessageBoxImage.Information);
+                    await ServiceProvider.Get<IDialogService>().MessageBoxAsync(error, MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 

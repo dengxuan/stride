@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -44,7 +44,7 @@ namespace Stride.Assets.Presentation.Templates
             {
                 using (var media = new FFmpegMedia())
                 {
-                    media.Open(file.ToWindowsPath());
+                    media.Open(file.ToOSPath());
                     
                     var videoStream = media.Streams.OfType<VideoStream>().FirstOrDefault();
                     if (videoStream != null)

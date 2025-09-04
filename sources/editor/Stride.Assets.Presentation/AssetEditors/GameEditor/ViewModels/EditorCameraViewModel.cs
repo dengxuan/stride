@@ -1,13 +1,13 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core.Annotations;
 using Stride.Core.Mathematics;
 using Stride.Core.Presentation.Commands;
-using Stride.Core.Presentation.ViewModel;
 using Stride.Assets.Presentation.AssetEditors.GameEditor.Services;
 using Stride.Assets.Presentation.SceneEditor;
 using Stride.Engine.Processors;
+using Stride.Core.Presentation.ViewModels;
 
 namespace Stride.Assets.Presentation.AssetEditors.GameEditor.ViewModels
 {
@@ -23,11 +23,27 @@ namespace Stride.Assets.Presentation.AssetEditors.GameEditor.ViewModels
 
         public static float[] AvailableMovementSpeed =
         {
+            0.05f,
             0.1f,
+            0.5f,
             1.0f,
-            3.0f,
+            1.5f,
+            2.5f,
+            5.0f,
             10.0f,
+            15.0f,
+            30.0f,
+            45.0f,
+            60.0f,
+            80.0f,
             100.0f,
+            130.0f,
+            180.0f,
+            250.0f,
+            400.0f,
+            500.0f,
+            700.0f,
+            1000.0f
         };
 
         public int AvailableMovementSpeedCount => AvailableMovementSpeed.Length - 1;

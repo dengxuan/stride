@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 /* MIT License
@@ -23,16 +23,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-using System;
+namespace Stride.Core.Annotations;
 
-namespace Stride.Core.Annotations
-{
-    /// <summary>
-    /// Indicates that <see cref="System.Collections.Generic.IEnumerable{T}"/>, passed as parameter, is never
-    /// enumerated.
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Parameter)]
-    public sealed class NoEnumerationAttribute : Attribute
-    {
-    }
-}
+/// <summary>
+/// Indicates that <see cref="IEnumerable{T}"/>, passed as parameter, is never
+/// enumerated.
+/// </summary>
+[AttributeUsage(AttributeTargets.Parameter)]
+public sealed class NoEnumerationAttribute : Attribute;

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -6,7 +6,8 @@ using System.IO;
 using System.Linq;
 using Stride.Core.Assets;
 using Stride.Core;
-using Stride.Core.VisualStudio;
+using Stride.Core.CodeEditorSupport.VisualStudio;
+using Stride.Core.Solutions;
 
 namespace Stride.Assets
 {
@@ -58,28 +59,13 @@ namespace Stride.Assets
 
             // Windows
             var windowsPlatform = new SolutionPlatform()
-                {
-                    Name = PlatformType.Windows.ToString(),
-                    IsAvailable = true,
-                    Alias = "Any CPU",
-                    TargetFramework = "net461",
-                    Type = PlatformType.Windows
-                };
-            windowsPlatform.PlatformsPart.Add(new SolutionPlatformPart("Any CPU"));
-            windowsPlatform.PlatformsPart.Add(new SolutionPlatformPart("Mixed Platforms") { Alias = "Any CPU"});
-            windowsPlatform.DefineConstants.Add("STRIDE_PLATFORM_WINDOWS");
-            windowsPlatform.DefineConstants.Add("STRIDE_PLATFORM_WINDOWS_DESKTOP");
-            windowsPlatform.Configurations.Add(new SolutionConfiguration("Testing"));
-            windowsPlatform.Configurations.Add(new SolutionConfiguration("AppStore"));
-
-            // Currently disabled
-            //windowsPlatform.Configurations.Add(coreClrDebug);
-            //windowsPlatform.Configurations.Add(coreClrRelease);
-            foreach (var part in windowsPlatform.PlatformsPart)
             {
-                part.Configurations.Clear();
-                part.Configurations.AddRange(windowsPlatform.Configurations);
-            }
+                Name = PlatformType.Windows.ToString(),
+                IsAvailable = true,
+                TargetFramework = "net8.0-windows",
+                RuntimeIdentifier = "win-x64",
+                Type = PlatformType.Windows
+            };
             solutionPlatforms.Add(windowsPlatform);
 
             // Universal Windows Platform (UWP)
@@ -98,7 +84,6 @@ namespace Stride.Assets
                 IncludeInSolution = false,
             };
 
-            uwpPlatform.DefineConstants.Add("STRIDE_PLATFORM_WINDOWS");
             uwpPlatform.DefineConstants.Add("STRIDE_PLATFORM_UWP");
             uwpPlatform.Configurations.Add(new SolutionConfiguration("Testing"));
             uwpPlatform.Configurations.Add(new SolutionConfiguration("AppStore"));
@@ -135,12 +120,10 @@ namespace Stride.Assets
             {
                 Name = PlatformType.Linux.ToString(),
                 IsAvailable = true,
-                TargetFramework = "netcoreapp2.1",
+                TargetFramework = "net8.0",
                 RuntimeIdentifier = "linux-x64",
                 Type = PlatformType.Linux,
             };
-            linuxPlatform.DefineConstants.Add("STRIDE_PLATFORM_UNIX");
-            linuxPlatform.DefineConstants.Add("STRIDE_PLATFORM_LINUX");
             solutionPlatforms.Add(linuxPlatform);
 
             // macOS
@@ -148,12 +131,10 @@ namespace Stride.Assets
             {
                 Name = PlatformType.macOS.ToString(),
                 IsAvailable = true,
-                TargetFramework = "netcoreapp2.1",
+                TargetFramework = "net8.0",
                 RuntimeIdentifier = "osx-x64",
                 Type = PlatformType.macOS,
             };
-            macOSPlatform.DefineConstants.Add("STRIDE_PLATFORM_UNIX");
-            macOSPlatform.DefineConstants.Add("STRIDE_PLATFORM_MACOS");
             solutionPlatforms.Add(macOSPlatform);
 
             // Android
@@ -161,7 +142,7 @@ namespace Stride.Assets
             {
                 Name = PlatformType.Android.ToString(),
                 Type = PlatformType.Android,
-                TargetFramework = "monoandroid81",
+                TargetFramework = "net8.0-android",
                 IsAvailable = IsVSComponentAvailableAnyVersion(XamarinAndroidComponents)
             };
             androidPlatform.DefineConstants.Add("STRIDE_PLATFORM_MONO_MOBILE");
@@ -188,7 +169,7 @@ namespace Stride.Assets
                 Name = PlatformType.iOS.ToString(),
                 SolutionName = "iPhone", // For iOS, we need to use iPhone as a solution name
                 Type = PlatformType.iOS,
-                TargetFramework = "xamarinios10",
+                TargetFramework = "net8.0-ios",
                 IsAvailable = IsVSComponentAvailableAnyVersion(XamariniOSComponents)
             };
             iphonePlatform.PlatformsPart.Add(new SolutionPlatformPart("iPhoneSimulator"));
@@ -261,42 +242,10 @@ namespace Stride.Assets
                 {
                     return IsFileInProgramFilesx86Exist(pair.Value);
                 }
-                else
-                {
-                    return VisualStudioVersions.AvailableVisualStudioInstances.Any(
-                        ideInfo => ideInfo.PackageVersions.ContainsKey(pair.Value)
-                    );
-                }
-            }
-            return false;
-        }
 
-        /// <summary>
-        /// Check if a particular component set for this IDE version
-        /// </summary>
-        /// <param name="ideInfo">The IDE info to search for the components</param>
-        /// <param name="vsVersionToComponent">A dictionary of Visual Studio versions to their respective paths for a given component</param>
-        /// <returns>true if the IDE has any of the component versions available, false otherwise</returns>
-        internal static bool IsVSComponentAvailableForIDE(IDEInfo ideInfo, IDictionary<Version, string> vsVersionToComponent)
-        {
-            if (ideInfo == null) { throw new ArgumentNullException("ideInfo"); }
-            if (vsVersionToComponent == null) { throw new ArgumentNullException("vsVersionToComponent"); }
-
-            string path = null;
-            if (vsVersionToComponent.TryGetValue(ideInfo.Version, out path))
-            {
-                if (ideInfo.Version == VS2015Version)
-                {
-                    return IsFileInProgramFilesx86Exist(path);
-                }
-                else
-                {
-                    return ideInfo.PackageVersions.ContainsKey(path);
-                }
-            }
-            else if (vsVersionToComponent.TryGetValue(VSAnyVersion, out path))
-            {
-                return ideInfo.PackageVersions.ContainsKey(path);
+                return VisualStudioVersions.AvailableInstances.Any(
+                    ideInfo => ideInfo.PackageVersions.ContainsKey(pair.Value)
+                );
             }
             return false;
         }

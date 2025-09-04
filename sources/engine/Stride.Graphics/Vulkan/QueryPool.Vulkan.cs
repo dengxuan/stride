@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #if STRIDE_GRAPHICS_API_VULKAN
 using System;
@@ -16,7 +16,7 @@ namespace Stride.Graphics
             fixed (long* dataPointer = &dataArray[0])
             {
                 // Read back all results
-                var result = vkGetQueryPoolResults(GraphicsDevice.NativeDevice, NativeQueryPool, 0, (uint)QueryCount, (uint)QueryCount * 8, dataPointer, 8, VkQueryResultFlags._64);
+                var result = vkGetQueryPoolResults(GraphicsDevice.NativeDevice, NativeQueryPool, 0, (uint)QueryCount, (uint)QueryCount * 8, dataPointer, 8, VkQueryResultFlags.Bit64);
 
                 // Some queries are not ready yet
                 if (result == VkResult.NotReady)

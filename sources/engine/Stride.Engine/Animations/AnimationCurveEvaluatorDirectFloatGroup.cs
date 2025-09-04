@@ -1,14 +1,15 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
 using Stride.Core.Mathematics;
+using System.Runtime.InteropServices;
 
 namespace Stride.Animations
 {
     public class AnimationCurveEvaluatorDirectFloatGroup : AnimationCurveEvaluatorDirectBlittableGroupBase<float>
     {
-        protected unsafe override void ProcessChannel(ref Channel channel, CompressedTimeSpan newTime, IntPtr location)
+        protected override unsafe void ProcessChannel(ref Channel channel, CompressedTimeSpan newTime, IntPtr location)
         {
             SetTime(ref channel, newTime);
 
@@ -16,7 +17,7 @@ namespace Stride.Animations
             var currentIndex = channel.CurrentIndex;
 
             var keyFrames = channel.Curve.KeyFrames;
-            var keyFramesItems = keyFrames.Items;
+            var keyFramesItems = CollectionsMarshal.AsSpan(keyFrames);
             var keyFramesCount = keyFrames.Count;
 
             // Extract data

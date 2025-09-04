@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System.Collections;
 using System.Collections.Generic;
@@ -28,7 +28,7 @@ namespace Stride.Core.Assets.Tests
                 // TODO: Re-enable non-pure collections here once we support them for serialization!
                 //MapItems2 = new MyDictionary();
                 MapItems3 = new MyDictionaryPure();
-                CustomObjectWithProtectedSet = new CustomObject { Name = "customObject" };
+                CustomObjectWithInternalSet = new CustomObject { Name = "customObject" };
             }
 
             [DataMember(0)]
@@ -65,7 +65,8 @@ namespace Stride.Core.Assets.Tests
 
             public MyDictionaryPure MapItems3 { get; set; }
 
-            public object CustomObjectWithProtectedSet { get; protected set; }
+            [DataMember]
+            public CustomObject CustomObjectWithInternalSet { get; internal set; }
         }
 
         [DataContract("CustomObject")]

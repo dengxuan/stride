@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Linq;
@@ -52,7 +52,7 @@ namespace Stride.Assets.Presentation.NodePresenters.Commands
             var session = assetPresenter.Asset.Session;
             var serviceProvider = assetPresenter.Asset.ServiceProvider;
 
-            var scriptSourceCodeProvider = serviceProvider.TryGet<IScriptSourceCodeResolver>();
+            var scriptSourceCodeProvider = serviceProvider.TryGet<IEntityComponentSourceCodeResolver>();
 
             if (scriptSourceCodeProvider == null)
                 return;

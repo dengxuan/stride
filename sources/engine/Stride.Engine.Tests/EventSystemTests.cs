@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Threading;
@@ -446,7 +446,7 @@ namespace Stride.Engine.Tests
                     await game.NextFrame();
                 }
 
-                Assert.True(false, "t2 should be completed");
+                Assert.Fail("t2 should be completed");
             });
         }
 

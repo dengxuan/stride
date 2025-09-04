@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -154,7 +154,7 @@ namespace Stride.Assets.Presentation.AssetEditors.EntityHierarchyEditor.ViewMode
             var canRename = Parent.Folders.All(x => x == this || !string.Equals(x.Name, newName, FolderCase));
             if (!canRename)
             {
-                ServiceProvider.Get<IDialogService>()
+                ServiceProvider.Get<IDialogService2>()
                     .BlockingMessageBox(string.Format(Tr._p("Message", "Unable to rename the folder '{0}' to '{1}'. A folder with the same name already exists."), name, newName), MessageBoxButton.OK,
                         MessageBoxImage.Information);
             }

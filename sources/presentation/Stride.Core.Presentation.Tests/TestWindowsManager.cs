@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Threading;
@@ -54,7 +54,7 @@ namespace Stride.Core.Presentation.Tests
             HideBlocking,
         }
 
-        [Theory]
+        [Theory(Skip = "The teamcity agent is currently running as a service, it cannot handle windowing operations. Will need to set it up as users before enabling this one again")]
         [InlineData(Step.ShowMain, Step.HideMain, Step.ShowModal, Step.HideModal, Step.ShowBlocking, Step.HideBlocking)]
         [InlineData(Step.ShowMain, Step.HideMain, Step.ShowBlocking, Step.HideBlocking, Step.ShowModal, Step.HideModal)]
         [InlineData(Step.ShowMain, Step.HideMain, Step.ShowBlocking, Step.ShowModal, Step.HideBlocking, Step.HideModal)]

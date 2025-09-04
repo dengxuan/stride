@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System.Threading.Tasks;
 using Stride.Core.Annotations;
@@ -45,7 +45,7 @@ namespace Stride.LauncherApp.ViewModels
         public override bool CanDelete => isDevRedirect;
 
         /// <inheritdoc/>
-        public override string InstallPath => path.ToWindowsPath();
+        public override string InstallPath => path.ToOSPath();
 
 
         // This property is not used because a dev verison cannot be downloaded.

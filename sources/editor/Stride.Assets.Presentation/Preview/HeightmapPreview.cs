@@ -1,16 +1,15 @@
-// Copyright (c) Stride contributors (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Assets.Physics;
-using Stride.Assets.Presentation.Preview.Views;
 using Stride.Core.Mathematics;
-using Stride.Editor.Preview;
+using Stride.Editor.Annotations;
 using Stride.Graphics;
 using Stride.Physics;
 
 namespace Stride.Assets.Presentation.Preview
 {
-    [AssetPreview(typeof(HeightmapAsset), typeof(HeightmapPreviewView))]
+    [AssetPreview<HeightmapAsset>]
     public class HeightmapPreview : PreviewFromSpriteBatch<HeightmapAsset>
     {
         private Heightmap heightmap;

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -14,16 +14,17 @@ using Stride.Core.Reflection;
 using Stride.Core.Presentation.Collections;
 using Stride.Core.Presentation.Commands;
 using Stride.Core.Presentation.Quantum;
-using Stride.Core.Presentation.ViewModel;
+using Stride.Core.Presentation.ViewModels;
 using Stride.Core.Quantum;
 using Stride.Assets.Presentation.ViewModel;
 using Stride.Assets.Rendering;
+using Stride.Core.Assets.Editor.Annotations;
 using Stride.Rendering;
 using Stride.Rendering.Compositing;
 
 namespace Stride.Assets.Presentation.AssetEditors.GraphicsCompositorEditor.ViewModels
 {
-    [AssetEditorViewModel(typeof(GraphicsCompositorAsset), typeof(Views.GraphicsCompositorEditorView))]
+    [AssetEditorViewModel<GraphicsCompositorViewModel>]
     public class GraphicsCompositorEditorViewModel : AssetEditorViewModel
     {
         protected readonly GraphViewModelService ViewModelService;
@@ -62,7 +63,7 @@ namespace Stride.Assets.Presentation.AssetEditors.GraphicsCompositorEditor.ViewM
             RemoveSelectedCameraSlotsCommand = new AnonymousCommand(ServiceProvider, RemoveSelectedCameraSlots);
         }
 
-        public new GraphicsCompositorViewModel Asset => (GraphicsCompositorViewModel)base.Asset;
+        public override GraphicsCompositorViewModel Asset => (GraphicsCompositorViewModel)base.Asset;
 
         public ObservableList<RenderStageViewModel> RenderStages { get; } = new ObservableList<RenderStageViewModel>();
 

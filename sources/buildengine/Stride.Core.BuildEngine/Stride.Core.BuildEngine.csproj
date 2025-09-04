@@ -3,21 +3,20 @@
     <StridePlatform>Windows</StridePlatform>
   </PropertyGroup>
   <Import Project="..\..\targets\Stride.Core.props" />
-  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="2.0.87" />
   <PropertyGroup>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <OutputType>Exe</OutputType>
     <PlatformTarget>x86</PlatformTarget>
     <StrideAssemblyProcessor>true</StrideAssemblyProcessor>
-    <TargetFrameworks>$(StrideEditorTargetFrameworks)</TargetFrameworks>
+    <TargetFramework>$(StrideEditorTargetFramework)</TargetFramework>
     <StrideAssemblyProcessorOptions>--auto-module-initializer --serialization</StrideAssemblyProcessorOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Mono.Options" Version="5.3.0.1" />
+    <PackageReference Include="Mono.Options" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\core\Stride.Core\Stride.Core.csproj" />
@@ -27,5 +26,4 @@
     <ProjectReference Include="..\Stride.Core.BuildEngine.Common\Stride.Core.BuildEngine.Common.csproj" />
   </ItemGroup>
   <Import Project="$(StrideSdkTargets)" />
-  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.87" />
 </Project>

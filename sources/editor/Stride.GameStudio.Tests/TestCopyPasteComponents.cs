@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -15,6 +15,8 @@ using Stride.GameStudio.Tests.Helpers;
 
 namespace Stride.GameStudio.Tests
 {
+    // AssetQuantumRegistry is currently not thread safe. Any unit tests accessing it must not run in parallel.
+    [Collection("TestCopyPaste")]
     public sealed class TestCopyPasteProperties
     {
         private ICopyPasteService service;

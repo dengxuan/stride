@@ -1,10 +1,12 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core.IO;
 using Stride.Core.Settings;
 using Stride.Core.Assets.Editor.Settings;
 using Stride.Core.Translation;
+using Stride.GameStudio.Remote;
+using Stride.GameStudio.Helpers;
 
 namespace Stride.GameStudio
 {
